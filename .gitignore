@@ -21,3 +21,8 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Local font build environment
+/.venv-font/
+__pycache__/
+*.py[cod]
