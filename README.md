@@ -21,4 +21,7 @@ npm run build
 
 ## Handwriting font
 
-网站首屏使用项目内的 Unicode 手写字体。字形源、映射与构建说明见 [`font-src/README.md`](font-src/README.md)。
+网站使用开源的志莽行书（Zhi Mang Xing），通过
+[`@fontsource/zhi-mang-xing`](https://fontsource.org/fonts/zhi-mang-xing)
+随项目自托管，不依赖运行时的第三方字体服务。字体采用 SIL Open Font
+License 1.1。
