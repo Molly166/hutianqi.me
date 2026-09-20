@@ -4,8 +4,8 @@ import "@fontsource/zhi-mang-xing/400.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "欢迎光临",
-  description: "hutianqi.me",
+  title: "胡天齐的人生地图",
+  description: "从中南民族大学双子塔图书馆出发，探索一张持续生长的人生地图。",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
