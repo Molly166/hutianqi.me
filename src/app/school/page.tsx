@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import JourneyLink from "@/components/journey/JourneyLink";
+import SchoolExperience from "@/components/school/SchoolExperience";
 
 export const metadata: Metadata = {
   title: "hutianqi.me",
@@ -8,18 +9,18 @@ export const metadata: Metadata = {
 
 export default function SchoolPage() {
   return (
-    <main className="school-detail-placeholder">
+    <main className="school-detail">
       <h1 className="sr-only" data-journey-heading tabIndex={-1}>
         中南民族大学
       </h1>
       <JourneyLink
-        className="school-detail-placeholder__back"
+        className="school-detail__back"
         href="/"
         aria-label="沿脚步返回人生地图"
         transitionLabel="正在离开学校，返回人生地图"
       >
         <svg
-          className="school-detail-placeholder__footsteps"
+          className="school-detail__footsteps"
           viewBox="0 0 64 64"
           aria-hidden="true"
         >
@@ -46,6 +47,7 @@ export default function SchoolPage() {
           </g>
         </svg>
       </JourneyLink>
+      <SchoolExperience />
     </main>
   );
 }
