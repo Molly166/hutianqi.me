@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "modules": [
+    { "id": "school", "label": "学校" },
+    { "id": "company", "label": "公司" },
+    { "id": "internship", "label": "实习" },
+    { "id": "work", "label": "工作" },
+    { "id": "life", "label": "生活" }
+  ],
+  "entries": []
+}
