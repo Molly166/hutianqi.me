@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "@fontsource/zhi-mang-xing/400.css";
+import JourneyTransitionProvider from "@/components/journey/JourneyTransitionProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <JourneyTransitionProvider>{children}</JourneyTransitionProvider>
+      </body>
     </html>
   );
 }
