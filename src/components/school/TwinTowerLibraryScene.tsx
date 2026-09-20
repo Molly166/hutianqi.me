@@ -3,13 +3,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-
-const schoolLandmark = {
-  id: "school-scuec",
-  type: "school",
-  name: "中南民族大学",
-  landmark: "双子塔图书馆",
-} as const;
+import { useJourneyTransition } from "@/components/journey/JourneyTransitionProvider";
+import { schoolLandmark } from "@/data/landmarks";
 
 const ivory = new THREE.MeshStandardMaterial({
   color: 0xd8d2c0,
@@ -343,6 +338,13 @@ function buildWorld(scene: THREE.Scene) {
 
 export default function TwinTowerLibraryScene() {
   const mountRef = useRef<HTMLDivElement>(null);
+  const activateSchoolRef = useRef<(() => void) | null>(null);
+  const transitionStartedRef = useRef(false);
+  const { beginJourney } = useJourneyTransition();
+
+  const activateSchoolFromKeyboard = () => {
+    activateSchoolRef.current?.();
+  };
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -454,6 +456,13 @@ export default function TwinTowerLibraryScene() {
     let pointerInside = false;
     let pointerX = 0;
     let pointerY = 0;
+    let pointerPress: {
+      id: number;
+      x: number;
+      y: number;
+      time: number;
+      startedOnSchool: boolean;
+    } | null = null;
 
     const clearHover = () => {
       if (!hoverOverlay.visible && !hoverLight.visible) return;
@@ -463,21 +472,27 @@ export default function TwinTowerLibraryScene() {
       renderScene();
     };
 
-    const updateHoverAt = (clientX: number, clientY: number) => {
+    const getSchoolHit = (clientX: number, clientY: number) => {
       const rect = renderer.domElement.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
+      if (!rect.width || !rect.height) return undefined;
 
       pointer.set(
         ((clientX - rect.left) / rect.width) * 2 - 1,
         -((clientY - rect.top) / rect.height) * 2 + 1,
       );
       raycaster.setFromCamera(pointer, camera);
+      return raycaster.intersectObjects(hoverTargets, false)[0];
+    };
 
-      const hit = raycaster.intersectObjects(hoverTargets, false)[0];
+    const updateHoverAt = (clientX: number, clientY: number) => {
+      const hit = getSchoolHit(clientX, clientY);
       if (!hit || !(hit.object instanceof THREE.Mesh)) {
+        renderer.domElement.style.cursor = "grab";
         clearHover();
         return;
       }
+
+      renderer.domElement.style.cursor = "pointer";
 
       const part = hit.object;
       const instanceId = hit.instanceId ?? -1;
@@ -507,6 +522,21 @@ export default function TwinTowerLibraryScene() {
       renderScene();
     };
 
+    const startSchoolDeparture = () => {
+      if (transitionStartedRef.current) return;
+      transitionStartedRef.current = true;
+      controls.enabled = false;
+      pointerInside = false;
+      clearHover();
+      renderer.domElement.style.cursor = "default";
+      beginJourney({
+        href: schoolLandmark.href,
+        label: `正在进入${schoolLandmark.title}`,
+      });
+    };
+
+    activateSchoolRef.current = startSchoolDeparture;
+
     const updateHover = (event: PointerEvent) => {
       if (event.pointerType && event.pointerType !== "mouse") return;
       pointerInside = true;
@@ -515,9 +545,41 @@ export default function TwinTowerLibraryScene() {
       if (!isOrbiting) updateHoverAt(pointerX, pointerY);
     };
 
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) {
+        return;
+      }
+      pointerPress = {
+        id: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        time: performance.now(),
+        startedOnSchool: Boolean(getSchoolHit(event.clientX, event.clientY)),
+      };
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      const press = pointerPress;
+      pointerPress = null;
+      if (!press || press.id !== event.pointerId || !press.startedOnSchool) return;
+
+      const travel = Math.hypot(event.clientX - press.x, event.clientY - press.y);
+      const duration = performance.now() - press.time;
+      if (travel > 7 || duration > 700) return;
+      if (!getSchoolHit(event.clientX, event.clientY)) return;
+
+      startSchoolDeparture();
+    };
+
     const handlePointerLeave = () => {
+      pointerPress = null;
       pointerInside = false;
       clearHover();
+    };
+
+    const handlePointerCancel = () => {
+      pointerPress = null;
+      handlePointerLeave();
     };
 
     const handleControlsStart = () => {
@@ -531,8 +593,10 @@ export default function TwinTowerLibraryScene() {
     };
 
     renderer.domElement.addEventListener("pointermove", updateHover);
+    renderer.domElement.addEventListener("pointerdown", handlePointerDown);
+    renderer.domElement.addEventListener("pointerup", handlePointerUp);
     renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
-    renderer.domElement.addEventListener("pointercancel", handlePointerLeave);
+    renderer.domElement.addEventListener("pointercancel", handlePointerCancel);
     controls.addEventListener("start", handleControlsStart);
     controls.addEventListener("end", handleControlsEnd);
 
@@ -572,9 +636,13 @@ export default function TwinTowerLibraryScene() {
       controls.removeEventListener("end", handleControlsEnd);
       controls.dispose();
       renderer.domElement.removeEventListener("pointermove", updateHover);
+      renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
+      renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
-      renderer.domElement.removeEventListener("pointercancel", handlePointerLeave);
+      renderer.domElement.removeEventListener("pointercancel", handlePointerCancel);
       if (frame) cancelAnimationFrame(frame);
+      activateSchoolRef.current = null;
+      transitionStartedRef.current = false;
       scene.remove(hoverOverlay);
       scene.remove(hoverLight);
       emptyHoverGeometry.dispose();
@@ -593,11 +661,21 @@ export default function TwinTowerLibraryScene() {
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [beginJourney]);
 
   return (
     <main className="school-scene">
+      <h1 className="sr-only" data-journey-heading tabIndex={-1}>
+        人生地图
+      </h1>
       <div className="school-scene__canvas" ref={mountRef} />
+      <button
+        type="button"
+        className="school-entry-shortcut"
+        onClick={activateSchoolFromKeyboard}
+      >
+        进入中南民族大学经历
+      </button>
     </main>
   );
 }
