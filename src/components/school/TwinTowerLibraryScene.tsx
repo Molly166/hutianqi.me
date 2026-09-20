@@ -4,6 +4,13 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+const schoolLandmark = {
+  id: "school-scuec",
+  type: "school",
+  name: "中南民族大学",
+  landmark: "双子塔图书馆",
+} as const;
+
 const ivory = new THREE.MeshStandardMaterial({
   color: 0xd8d2c0,
   roughness: 0.82,
@@ -226,6 +233,8 @@ function addCurvedColonnade(parent: THREE.Object3D) {
 
 function createLibrary() {
   const building = new THREE.Group();
+  building.name = schoolLandmark.id;
+  building.userData.landmark = schoolLandmark;
   building.rotation.y = -0.08;
 
   box(building, [10.8, 0.64, 3.85], [0, 0.55, 0.12], paleStone);
@@ -248,6 +257,9 @@ function createLibrary() {
     if (child instanceof THREE.Mesh) {
       child.castShadow = true;
       child.receiveShadow = true;
+      child.userData.landmarkId = schoolLandmark.id;
+      child.userData.landmarkType = schoolLandmark.type;
+      child.userData.hoverable = true;
     }
   });
 
@@ -326,7 +338,7 @@ function buildWorld(scene: THREE.Scene) {
   treePositions.forEach(([x, z, scale]) => world.add(createTree(x, z, scale)));
 
   scene.add(world);
-  return world;
+  return { world, school: library };
 }
 
 export default function TwinTowerLibraryScene() {
@@ -391,16 +403,138 @@ export default function TwinTowerLibraryScene() {
     sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    const world = buildWorld(scene);
+    const { world, school } = buildWorld(scene);
 
     let frame = 0;
     const renderScene = () => {
-      if (frame) cancelAnimationFrame(frame);
+      if (frame) return;
       frame = requestAnimationFrame(() => {
         renderer.render(scene, camera);
         frame = 0;
       });
     };
+
+    const hoverTargets: THREE.Mesh[] = [];
+    school.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.userData.hoverable) {
+        hoverTargets.push(child);
+      }
+    });
+
+    const hoverMaterial = new THREE.MeshBasicMaterial({
+      color: 0xe5f2c4,
+      transparent: true,
+      opacity: 0.13,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      toneMapped: false,
+    });
+    const emptyHoverGeometry = new THREE.BufferGeometry();
+    const hoverOverlay = new THREE.Mesh(emptyHoverGeometry, hoverMaterial);
+    hoverOverlay.visible = false;
+    hoverOverlay.renderOrder = 4;
+    scene.add(hoverOverlay);
+
+    const hoverLight = new THREE.PointLight(0xeaf6cb, 2.6, 3.4, 2);
+    hoverLight.visible = false;
+    scene.add(hoverLight);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const instanceMatrix = new THREE.Matrix4();
+    const hoverMatrix = new THREE.Matrix4();
+    const hoverPosition = new THREE.Vector3();
+    const hoverQuaternion = new THREE.Quaternion();
+    const hoverScale = new THREE.Vector3();
+    const lightOffset = new THREE.Vector3();
+    let hoveredPart = "";
+    let isOrbiting = false;
+    let pointerInside = false;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    const clearHover = () => {
+      if (!hoverOverlay.visible && !hoverLight.visible) return;
+      hoverOverlay.visible = false;
+      hoverLight.visible = false;
+      hoveredPart = "";
+      renderScene();
+    };
+
+    const updateHoverAt = (clientX: number, clientY: number) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+
+      pointer.set(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(pointer, camera);
+
+      const hit = raycaster.intersectObjects(hoverTargets, false)[0];
+      if (!hit || !(hit.object instanceof THREE.Mesh)) {
+        clearHover();
+        return;
+      }
+
+      const part = hit.object;
+      const instanceId = hit.instanceId ?? -1;
+      const partKey = `${part.uuid}:${instanceId}`;
+
+      lightOffset.subVectors(camera.position, hit.point).normalize();
+      hoverLight.position.copy(hit.point).addScaledVector(lightOffset, 0.32);
+      hoverLight.visible = true;
+
+      if (partKey !== hoveredPart) {
+        part.updateWorldMatrix(true, false);
+        hoverMatrix.copy(part.matrixWorld);
+        if (part instanceof THREE.InstancedMesh && instanceId >= 0) {
+          part.getMatrixAt(instanceId, instanceMatrix);
+          hoverMatrix.multiply(instanceMatrix);
+        }
+
+        hoverMatrix.decompose(hoverPosition, hoverQuaternion, hoverScale);
+        hoverOverlay.geometry = part.geometry;
+        hoverOverlay.position.copy(hoverPosition);
+        hoverOverlay.quaternion.copy(hoverQuaternion);
+        hoverOverlay.scale.copy(hoverScale).multiplyScalar(1.018);
+        hoverOverlay.visible = true;
+        hoveredPart = partKey;
+      }
+
+      renderScene();
+    };
+
+    const updateHover = (event: PointerEvent) => {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      pointerInside = true;
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (!isOrbiting) updateHoverAt(pointerX, pointerY);
+    };
+
+    const handlePointerLeave = () => {
+      pointerInside = false;
+      clearHover();
+    };
+
+    const handleControlsStart = () => {
+      isOrbiting = true;
+      clearHover();
+    };
+
+    const handleControlsEnd = () => {
+      isOrbiting = false;
+      if (pointerInside) updateHoverAt(pointerX, pointerY);
+    };
+
+    renderer.domElement.addEventListener("pointermove", updateHover);
+    renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
+    renderer.domElement.addEventListener("pointercancel", handlePointerLeave);
+    controls.addEventListener("start", handleControlsStart);
+    controls.addEventListener("end", handleControlsEnd);
 
     const resize = () => {
       const { width, height } = mount.getBoundingClientRect();
@@ -434,8 +568,17 @@ export default function TwinTowerLibraryScene() {
     return () => {
       observer.disconnect();
       controls.removeEventListener("change", renderScene);
+      controls.removeEventListener("start", handleControlsStart);
+      controls.removeEventListener("end", handleControlsEnd);
       controls.dispose();
+      renderer.domElement.removeEventListener("pointermove", updateHover);
+      renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+      renderer.domElement.removeEventListener("pointercancel", handlePointerLeave);
       if (frame) cancelAnimationFrame(frame);
+      scene.remove(hoverOverlay);
+      scene.remove(hoverLight);
+      emptyHoverGeometry.dispose();
+      hoverMaterial.dispose();
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
         object.geometry.dispose();
