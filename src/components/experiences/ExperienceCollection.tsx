@@ -1,6 +1,12 @@
 "use client";
 
-import { type PointerEvent, useEffect, useRef, useState } from "react";
+import {
+  type PointerEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
 import { formatExperienceDate, type ExperienceEntry } from "@/lib/experiences";
 import ExperienceTimeline from "./ExperienceTimeline";
@@ -9,13 +15,17 @@ export interface ExperiencePeriod {
   id: string;
   year: number;
   month: number;
+  day?: number;
   label: string;
   entries: readonly ExperienceEntry[];
 }
 
+export type ExperiencePeriodUnit = "month" | "day";
+
 interface Props {
   periods: readonly ExperiencePeriod[];
   label: string;
+  periodUnit?: ExperiencePeriodUnit;
 }
 
 function Note({ entry }: { entry: ExperienceEntry }) {
@@ -25,6 +35,7 @@ function Note({ entry }: { entry: ExperienceEntry }) {
       <time className="experience-note__date" dateTime={entry.date}>{formatExperienceDate(entry.date)}</time>
       {entry.title && <h2 className="experience-note__title">{entry.title}</h2>}
       {entry.text && <p className="experience-note__text">{entry.text}</p>}
+      {entry.textEn && <p className="experience-note__text experience-note__text--en" lang="en">{entry.textEn}</p>}
       {!!entry.images?.length && (
         <div className="experience-note__images">
           {entry.images.map((photo, index) => (
@@ -36,9 +47,149 @@ function Note({ entry }: { entry: ExperienceEntry }) {
   );
 }
 
+interface NotePlacement {
+  width: number;
+  x: number;
+  y: number;
+}
+
+interface NoteLayout {
+  height: number;
+  placements: NotePlacement[];
+}
+
+function sameLayout(current: NoteLayout | null, next: NoteLayout): boolean {
+  if (!current || Math.abs(current.height - next.height) > 0.5 || current.placements.length !== next.placements.length) {
+    return false;
+  }
+  return current.placements.every((placement, index) => {
+    const candidate = next.placements[index];
+    return Math.abs(placement.width - candidate.width) <= 0.5
+      && Math.abs(placement.x - candidate.x) <= 0.5
+      && Math.abs(placement.y - candidate.y) <= 0.5;
+  });
+}
+
+function MasonryNotes({ entries }: { entries: readonly ExperienceEntry[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [layout, setLayout] = useState<NoteLayout | null>(null);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let cancelled = false;
+    let widthFrame = 0;
+    let heightFrame = 0;
+    let observedWidth = container.clientWidth;
+
+    const scheduleLayout = () => {
+      window.cancelAnimationFrame(widthFrame);
+      window.cancelAnimationFrame(heightFrame);
+      widthFrame = window.requestAnimationFrame(() => {
+        const styles = window.getComputedStyle(container);
+        const columnCount = Math.max(
+          1,
+          Math.round(Number.parseFloat(styles.getPropertyValue("--experience-column-count")) || 1),
+        );
+        const columnGap = Number.parseFloat(styles.getPropertyValue("--experience-column-gap")) || 0;
+        const rowGap = Number.parseFloat(styles.getPropertyValue("--experience-row-gap")) || 0;
+        const availableWidth = container.clientWidth;
+        const itemWidth = Math.max(
+          0,
+          (availableWidth - columnGap * (columnCount - 1)) / columnCount,
+        );
+        const items = itemRefs.current.slice(0, entries.length);
+
+        for (const item of items) {
+          if (item) item.style.width = `${itemWidth}px`;
+        }
+
+        heightFrame = window.requestAnimationFrame(() => {
+          if (cancelled) return;
+          const columnBottoms = Array.from({ length: columnCount }, () => 0);
+          const placements = items.map((item): NotePlacement => {
+            let column = 0;
+            for (let index = 1; index < columnBottoms.length; index += 1) {
+              if (columnBottoms[index] < columnBottoms[column] - 0.5) column = index;
+            }
+            const y = columnBottoms[column];
+            columnBottoms[column] = y + (item?.offsetHeight ?? 0) + rowGap;
+            return {
+              width: itemWidth,
+              x: column * (itemWidth + columnGap),
+              y,
+            };
+          });
+          const occupiedHeight = placements.length ? Math.max(...columnBottoms) - rowGap : 0;
+          const nextLayout = { height: Math.max(0, occupiedHeight), placements };
+          setLayout((current) => sameLayout(current, nextLayout) ? current : nextLayout);
+        });
+      });
+    };
+
+    const containerObserver = new ResizeObserver(([entry]) => {
+      const nextWidth = entry.contentRect.width;
+      if (Math.abs(nextWidth - observedWidth) <= 0.5) return;
+      observedWidth = nextWidth;
+      scheduleLayout();
+    });
+    const itemObserver = new ResizeObserver(scheduleLayout);
+    containerObserver.observe(container);
+    for (const item of itemRefs.current.slice(0, entries.length)) {
+      if (item) itemObserver.observe(item);
+    }
+
+    scheduleLayout();
+    document.fonts.ready.then(() => {
+      if (!cancelled) scheduleLayout();
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(widthFrame);
+      window.cancelAnimationFrame(heightFrame);
+      containerObserver.disconnect();
+      itemObserver.disconnect();
+    };
+  }, [entries]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="experience-board__notes"
+      data-masonry={layout ? "true" : undefined}
+      style={layout ? { height: layout.height } : undefined}
+    >
+      {entries.map((entry, index) => {
+        const placement = layout?.placements[index];
+        return (
+          <div
+            key={entry.id}
+            ref={(node) => { itemRefs.current[index] = node; }}
+            className="experience-note-slot"
+            style={placement ? {
+              width: placement.width,
+              transform: `translate3d(${placement.x}px, ${placement.y}px, 0)`,
+            } : undefined}
+          >
+            <Note entry={entry} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Reusable read-only presentation. Content editing lives in the experience store/CLI. */
-export default function ExperienceCollection({ periods, label }: Props) {
-  const [selection, setSelection] = useState<{ id: string; previousId: string | null; revision: number }>({ id: periods[0]?.id ?? "", previousId: null, revision: 0 });
+export default function ExperienceCollection({ periods, label, periodUnit = "month" }: Props) {
+  const [selection, setSelection] = useState<{
+    id: string;
+    previousId: string | null;
+    direction: "forward" | "backward" | null;
+    revision: number;
+  }>({ id: periods[0]?.id ?? "", previousId: null, direction: null, revision: 0 });
   const pointerStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const selectedIndex = Math.max(0, periods.findIndex((period) => period.id === selection.id));
   const current = periods[selectedIndex];
@@ -47,19 +198,27 @@ export default function ExperienceCollection({ periods, label }: Props) {
   useEffect(() => {
     if (!selection.previousId) return;
     const timer = window.setTimeout(() => {
-      setSelection((state) => state.revision === selection.revision ? { ...state, previousId: null } : state);
+      setSelection((state) => state.revision === selection.revision
+        ? { ...state, previousId: null, direction: null }
+        : state);
     }, 720);
     return () => window.clearTimeout(timer);
   }, [selection.previousId, selection.revision]);
 
   const select = (index: number) => {
-    if (index < 0 || index >= periods.length || index === selectedIndex) return;
+    if (index < 0 || index >= periods.length) return;
+    const targetId = periods[index].id;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setSelection((state) => ({
-      id: periods[index].id,
-      previousId: reduceMotion ? null : current.id,
-      revision: state.revision + 1,
-    }));
+    setSelection((state) => {
+      if (state.id === targetId) return state;
+      const fromIndex = periods.findIndex((period) => period.id === state.id);
+      return {
+        id: targetId,
+        previousId: reduceMotion ? null : state.id,
+        direction: reduceMotion ? null : index > fromIndex ? "forward" : "backward",
+        revision: state.revision + 1,
+      };
+    });
   };
 
   const finishSwipe = (event: PointerEvent<HTMLDivElement>) => {
@@ -96,19 +255,18 @@ export default function ExperienceCollection({ periods, label }: Props) {
               key={period.id}
               className="experience-board"
               data-motion={!previous ? undefined : outgoing ? "out" : "in"}
+              data-direction={previous ? selection.direction ?? undefined : undefined}
               aria-hidden={outgoing || undefined}
               inert={outgoing || undefined}
               aria-label={period.label}
             >
-              <div className="experience-board__notes">
-                {period.entries.map((entry) => <Note key={entry.id} entry={entry} />)}
-              </div>
+              <MasonryNotes entries={period.entries} />
             </div>
           );
         })}
       </div>
-      <span className="sr-only" role="status">{current.label}，{current.entries.length}条经历</span>
-      <ExperienceTimeline months={periods} label={label} selectedIndex={selectedIndex} onSelect={select} />
+      <span className="sr-only" role="status">{current.label}，{current.entries.length}张便签</span>
+      <ExperienceTimeline periods={periods} unit={periodUnit} label={label} selectedIndex={selectedIndex} onSelect={select} />
     </div>
   );
 }

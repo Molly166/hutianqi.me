@@ -15,6 +15,10 @@ export interface ExperienceMonth {
   entries: readonly ExperienceEntry[];
 }
 
+export interface ExperienceDay extends ExperienceMonth {
+  day: number;
+}
+
 export interface ExperienceMonthRange {
   start: { year: number; month: number };
   end: { year: number; month: number };
@@ -75,6 +79,34 @@ export function buildExperienceMonths(
       month,
       label: `${year}年${month}月`,
       entries: entriesByMonth.get(id) ?? [],
+    };
+  });
+}
+
+/** Group one registered content module by each real date that has content. */
+export function buildExperienceDays(
+  entries: readonly ExperienceEntry[],
+  moduleId: ExperienceModuleId,
+): ExperienceDay[] {
+  const entriesByDay = new Map<string, ExperienceEntry[]>();
+
+  for (const entry of sortExperienceEntries(entries, moduleId)) {
+    const dayEntries = entriesByDay.get(entry.date) ?? [];
+    dayEntries.push(entry);
+    entriesByDay.set(entry.date, dayEntries);
+  }
+
+  return Array.from(entriesByDay, ([id, dayEntries]) => {
+    const year = Number(id.slice(0, 4));
+    const month = Number(id.slice(5, 7));
+    const day = Number(id.slice(8, 10));
+    return {
+      id,
+      year,
+      month,
+      day,
+      label: `${year}年${month}月${day}日`,
+      entries: dayEntries,
     };
   });
 }

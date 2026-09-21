@@ -24,7 +24,7 @@ import {
 export const DEFAULT_EXPERIENCES_ROOT = resolve(process.cwd(), "src/data/experiences");
 export const EXPERIENCE_FILE_STEM_PATTERN = /^\d{4}-\d{2}-\d{2}(?:-(?:0[1-9]|[1-9]\d))?$/;
 
-const EXPERIENCE_FILE_FIELDS = ["id", "date", "title", "text", "images"] as const;
+const EXPERIENCE_FILE_FIELDS = ["id", "date", "title", "text", "textEn", "images"] as const;
 
 export type ExperienceFileData = Omit<ExperienceEntry, "moduleId">;
 
@@ -166,6 +166,7 @@ export function experienceFileData(entry: ExperienceEntry): ExperienceFileData {
   const data: ExperienceFileData = { id: validated.id, date: validated.date };
   if (validated.title !== undefined) data.title = validated.title;
   if (validated.text !== undefined) data.text = validated.text;
+  if (validated.textEn !== undefined) data.textEn = validated.textEn;
   if (validated.images !== undefined) data.images = validated.images;
   return data;
 }

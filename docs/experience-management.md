@@ -32,6 +32,7 @@ src/data/experiences/school/2023-09-12.json
   "date": "2023-09-12",
   "title": "初入校园",
   "text": "今天正式开始大学生活。",
+  "textEn": "Today marks the beginning of my university life.",
   "images": [
     {
       "src": "/images/experiences/school/2023-09-12/campus.jpg",
@@ -43,7 +44,7 @@ src/data/experiences/school/2023-09-12.json
 
 `moduleId` 由父目录推断，`id` 由模块和文件名共同确定：`school/2023-09-12.json` 的 ID 必须是 `school-2023-09-12`，`school/2023-09-12-01.json` 的 ID 必须是 `school-2023-09-12-01`。标题、正文或图片更新不会改变 ID；日期更新会同步改变文件名和 ID。
 
-日期必须是实际存在的 `YYYY-MM-DD` 日期。`title`、`text`、`images` 至少有一项有效内容；允许纯文字、纯图片或图文混排。每张图片都必须包含网站地址和替代文字 `alt`。
+日期必须是实际存在的 `YYYY-MM-DD` 日期。`title`、`text`、`textEn`、`images` 至少有一项有效内容；允许纯文字、纯图片或图文混排。中文正文写在 `text`，对应英文写在 `textEn`，页面会依次展示。每张图片都必须包含网站地址和替代文字 `alt`。
 
 手工添加后，在项目根目录运行：
 
@@ -68,7 +69,7 @@ npm run experience -- list
 npm run experience -- add --module school --input note.json --dry-run
 npm run experience -- add --module school --input note.json
 
-# 修改；patch.json 只填写要改的 date/title/text/images
+# 修改；patch.json 只填写要改的 date/title/text/textEn/images
 npm run experience -- update --module school --id 记录ID --input patch.json --dry-run
 npm run experience -- update --module school --id 记录ID --input patch.json
 
@@ -77,9 +78,9 @@ npm run experience -- remove --module school --id 记录ID --dry-run
 npm run experience -- remove --module school --id 记录ID
 ```
 
-新增输入只允许 `id`、`date`、`title`、`text`、`images`；其中 `id` 建议省略，`date` 必填。命令会选择当天编号最小的空闲位置：第一条是 `YYYY-MM-DD.json` 和 `<module>-YYYY-MM-DD`，后续是 `-01`、`-02`。如果明确填写 ID，它必须正好等于这次应生成的 ID。输出的 `file` 和 `entry.id` 是最终结果；相同目录状态下，试运行和正式运行的结果一致。
+新增输入只允许 `id`、`date`、`title`、`text`、`textEn`、`images`；其中 `id` 建议省略，`date` 必填。命令会选择当天编号最小的空闲位置：第一条是 `YYYY-MM-DD.json` 和 `<module>-YYYY-MM-DD`，后续是 `-01`、`-02`。如果明确填写 ID，它必须正好等于这次应生成的 ID。输出的 `file` 和 `entry.id` 是最终结果；相同目录状态下，试运行和正式运行的结果一致。
 
-更新输入只允许 `date`、`title`、`text`、`images`，不能直接填写 `id` 或移动模块。未出现的字段保持不变；用空字符串清空标题或正文，用 `images: []` 清空图片引用，不使用 `null`。清空后仍需至少保留一种有效内容。修改日期时，命令会优先保留原来的同日序号；如该位置已占用，则选择新日期下编号最小的空闲位置，并同步修改 ID。输出中的 `previousId`、`previousFile` 和新的 `entry.id`、`file` 会明确列出变化。
+更新输入只允许 `date`、`title`、`text`、`textEn`、`images`，不能直接填写 `id` 或移动模块。未出现的字段保持不变；用空字符串清空标题、中文正文或英文正文，用 `images: []` 清空图片引用，不使用 `null`。清空后仍需至少保留一种有效内容。修改日期时，命令会优先保留原来的同日序号；如该位置已占用，则选择新日期下编号最小的空闲位置，并同步修改 ID。输出中的 `previousId`、`previousFile` 和新的 `entry.id`、`file` 会明确列出变化。
 
 `--dry-run` 会执行完整读取、查找、合并和校验，但不会创建、替换、重命名或删除任何文件。测试其他数据目录时使用 `--root /绝对路径/experiences`；旧的 `--store` 单文件参数已移除。
 
