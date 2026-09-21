@@ -4,10 +4,20 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { useJourneyTransition } from "@/components/journey/JourneyTransitionProvider";
-import { schoolLandmark } from "@/data/landmarks";
-import { createLibrary, createTree } from "@/components/school/libraryModel";
+import {
+  byteDanceShenzhenBayLandmark,
+  cinemaLandmark,
+  geetestLandmark,
+  mapLandmarks,
+  schoolLandmark,
+} from "@/data/landmarks";
+import { createByteDanceShenzhenBayBuilding } from "@/components/company/byteDanceShenzhenBayModel";
+import { createCinema } from "@/components/cinema/cinemaModel";
+import { createGeetestBuilding } from "@/components/company/geetestModel";
+import { createLibrary } from "@/components/school/libraryModel";
+import { createLandscape } from "@/components/map/landscape";
 
-function buildWorld(scene: THREE.Scene) {
+function buildWorld(scene: THREE.Scene, onAssetReady: () => void) {
   const world = new THREE.Group();
   world.position.y = -0.12;
 
@@ -33,6 +43,8 @@ function buildWorld(scene: THREE.Scene) {
   terrain.receiveShadow = true;
   world.add(terrain);
 
+  world.add(createLandscape());
+
   const plaza = new THREE.Mesh(
     new THREE.CircleGeometry(5.1, 64),
     new THREE.MeshStandardMaterial({ color: 0xbab29f, roughness: 0.92 }),
@@ -43,30 +55,45 @@ function buildWorld(scene: THREE.Scene) {
   plaza.receiveShadow = true;
   world.add(plaza);
 
-  const library = createLibrary();
+  const library = createLibrary(onAssetReady);
   library.position.set(0, 0.22, -0.2);
   world.add(library);
 
-  const treePositions: Array<[number, number, number]> = [
-    [-7.2, -2.8, 1.05], [-6.8, -0.7, 0.9], [-6.4, 1.55, 1.15],
-    [-5.9, 3.4, 0.82], [6.9, -2.7, 1.08], [6.5, -0.6, 0.88],
-    [6.2, 1.8, 1.02], [5.7, 3.65, 0.78], [-3.9, -4.15, 0.74],
-    [3.8, -4.25, 0.8],
-  ];
-  treePositions.forEach(([x, z, scale]) => world.add(createTree(x, z, scale)));
+  const geetest = createGeetestBuilding(onAssetReady);
+  geetest.position.set(9.5, 0.22, -7);
+  geetest.scale.setScalar(0.78);
+  world.add(geetest);
+
+  const byteDance = createByteDanceShenzhenBayBuilding(onAssetReady);
+  byteDance.position.set(20, 0.22, -15.5);
+  byteDance.scale.setScalar(0.9);
+  world.add(byteDance);
+
+  const cinema = createCinema();
+  cinema.position.set(-21, 0.22, -15);
+  cinema.scale.setScalar(0.88);
+  world.add(cinema);
 
   scene.add(world);
-  return { world, school: library };
+  return {
+    world,
+    landmarks: new Map<string, THREE.Group>([
+      [schoolLandmark.id, library],
+      [geetestLandmark.id, geetest],
+      [byteDanceShenzhenBayLandmark.id, byteDance],
+      [cinemaLandmark.id, cinema],
+    ]),
+  };
 }
 
-export default function TwinTowerLibraryScene() {
+export default function LifeMapScene() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const activateSchoolRef = useRef<(() => void) | null>(null);
+  const activateLandmarkRef = useRef<((landmarkId: string) => void) | null>(null);
   const transitionStartedRef = useRef(false);
   const { beginJourney } = useJourneyTransition();
 
-  const activateSchoolFromKeyboard = () => {
-    activateSchoolRef.current?.();
+  const activateLandmarkFromKeyboard = (landmarkId: string) => {
+    activateLandmarkRef.current?.(landmarkId);
   };
 
   useEffect(() => {
@@ -91,7 +118,7 @@ export default function TwinTowerLibraryScene() {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.setAttribute(
       "aria-label",
-      "中南民族大学双子塔图书馆三维模型，可拖动旋转并缩放",
+      "人生地图三维模型，可拖动旋转、缩放并选择建筑",
     );
     renderer.domElement.style.touchAction = "none";
     mount.appendChild(renderer.domElement);
@@ -128,22 +155,25 @@ export default function TwinTowerLibraryScene() {
     sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    const { world, school } = buildWorld(scene);
-
+    let isActive = true;
     let frame = 0;
     const renderScene = () => {
-      if (frame) return;
+      if (!isActive || frame) return;
       frame = requestAnimationFrame(() => {
         renderer.render(scene, camera);
         frame = 0;
       });
     };
 
+    const { world, landmarks } = buildWorld(scene, renderScene);
+
     const hoverTargets: THREE.Mesh[] = [];
-    school.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.userData.hoverable) {
-        hoverTargets.push(child);
-      }
+    landmarks.forEach((landmark) => {
+      landmark.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.userData.hoverable) {
+          hoverTargets.push(child);
+        }
+      });
     });
 
     const hoverMaterial = new THREE.MeshBasicMaterial({
@@ -175,6 +205,7 @@ export default function TwinTowerLibraryScene() {
     const hoverScale = new THREE.Vector3();
     const lightOffset = new THREE.Vector3();
     let hoveredPart = "";
+    let hoveredLandmarkId = "";
     let isOrbiting = false;
     let pointerInside = false;
     let pointerX = 0;
@@ -184,18 +215,22 @@ export default function TwinTowerLibraryScene() {
       x: number;
       y: number;
       time: number;
-      startedOnSchool: boolean;
+      landmarkId: string | null;
     } | null = null;
 
     const clearHover = () => {
-      if (!hoverOverlay.visible && !hoverLight.visible) return;
+      if (!hoverOverlay.visible && !hoverLight.visible && !hoveredLandmarkId) return;
+      if (hoveredLandmarkId) {
+        landmarks.get(hoveredLandmarkId)?.userData.setHovered?.(false);
+        hoveredLandmarkId = "";
+      }
       hoverOverlay.visible = false;
       hoverLight.visible = false;
       hoveredPart = "";
       renderScene();
     };
 
-    const getSchoolHit = (clientX: number, clientY: number) => {
+    const getLandmarkHit = (clientX: number, clientY: number) => {
       const rect = renderer.domElement.getBoundingClientRect();
       if (!rect.width || !rect.height) return undefined;
 
@@ -208,7 +243,7 @@ export default function TwinTowerLibraryScene() {
     };
 
     const updateHoverAt = (clientX: number, clientY: number) => {
-      const hit = getSchoolHit(clientX, clientY);
+      const hit = getLandmarkHit(clientX, clientY);
       if (!hit || !(hit.object instanceof THREE.Mesh)) {
         renderer.domElement.style.cursor = "grab";
         clearHover();
@@ -218,6 +253,14 @@ export default function TwinTowerLibraryScene() {
       renderer.domElement.style.cursor = "pointer";
 
       const part = hit.object;
+      const landmarkId = part.userData.landmarkId as string;
+      if (landmarkId !== hoveredLandmarkId) {
+        if (hoveredLandmarkId) {
+          landmarks.get(hoveredLandmarkId)?.userData.setHovered?.(false);
+        }
+        hoveredLandmarkId = landmarkId;
+        landmarks.get(landmarkId)?.userData.setHovered?.(true);
+      }
       const instanceId = hit.instanceId ?? -1;
       const partKey = `${part.uuid}:${instanceId}`;
 
@@ -245,7 +288,9 @@ export default function TwinTowerLibraryScene() {
       renderScene();
     };
 
-    const startSchoolDeparture = () => {
+    const startLandmarkDeparture = (landmarkId: string) => {
+      const landmark = mapLandmarks.find(({ id }) => id === landmarkId);
+      if (!landmark) return;
       if (transitionStartedRef.current) return;
       transitionStartedRef.current = true;
       controls.enabled = false;
@@ -253,12 +298,12 @@ export default function TwinTowerLibraryScene() {
       clearHover();
       renderer.domElement.style.cursor = "default";
       beginJourney({
-        href: schoolLandmark.href,
-        label: `正在进入${schoolLandmark.title}`,
+        href: landmark.href,
+        label: `正在进入${landmark.title}`,
       });
     };
 
-    activateSchoolRef.current = startSchoolDeparture;
+    activateLandmarkRef.current = startLandmarkDeparture;
 
     const updateHover = (event: PointerEvent) => {
       if (event.pointerType && event.pointerType !== "mouse") return;
@@ -277,21 +322,27 @@ export default function TwinTowerLibraryScene() {
         x: event.clientX,
         y: event.clientY,
         time: performance.now(),
-        startedOnSchool: Boolean(getSchoolHit(event.clientX, event.clientY)),
+        landmarkId:
+          (getLandmarkHit(event.clientX, event.clientY)?.object.userData
+            .landmarkId as string | undefined) ?? null,
       };
     };
 
     const handlePointerUp = (event: PointerEvent) => {
       const press = pointerPress;
       pointerPress = null;
-      if (!press || press.id !== event.pointerId || !press.startedOnSchool) return;
+      if (!press || press.id !== event.pointerId || !press.landmarkId) return;
 
       const travel = Math.hypot(event.clientX - press.x, event.clientY - press.y);
       const duration = performance.now() - press.time;
       if (travel > 7 || duration > 700) return;
-      if (!getSchoolHit(event.clientX, event.clientY)) return;
+      const releaseLandmarkId = getLandmarkHit(
+        event.clientX,
+        event.clientY,
+      )?.object.userData.landmarkId as string | undefined;
+      if (releaseLandmarkId !== press.landmarkId) return;
 
-      startSchoolDeparture();
+      startLandmarkDeparture(press.landmarkId);
     };
 
     const handlePointerLeave = () => {
@@ -353,6 +404,7 @@ export default function TwinTowerLibraryScene() {
     renderScene();
 
     return () => {
+      isActive = false;
       observer.disconnect();
       controls.removeEventListener("change", renderScene);
       controls.removeEventListener("start", handleControlsStart);
@@ -364,12 +416,13 @@ export default function TwinTowerLibraryScene() {
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
       renderer.domElement.removeEventListener("pointercancel", handlePointerCancel);
       if (frame) cancelAnimationFrame(frame);
-      activateSchoolRef.current = null;
+      activateLandmarkRef.current = null;
       transitionStartedRef.current = false;
       scene.remove(hoverOverlay);
       scene.remove(hoverLight);
       emptyHoverGeometry.dispose();
       hoverMaterial.dispose();
+      const disposedTextures = new Set<THREE.Texture>();
       scene.traverse((object) => {
         if (!(object instanceof THREE.Mesh)) return;
         object.geometry.dispose();
@@ -377,6 +430,13 @@ export default function TwinTowerLibraryScene() {
           ? object.material
           : [object.material];
         materials.forEach((material) => {
+          const texture = (material as THREE.Material & {
+            map?: THREE.Texture | null;
+          }).map;
+          if (texture && !disposedTextures.has(texture)) {
+            texture.dispose();
+            disposedTextures.add(texture);
+          }
           if (!material.userData.shared) material.dispose();
         });
       });
@@ -392,13 +452,16 @@ export default function TwinTowerLibraryScene() {
         人生地图
       </h1>
       <div className="school-scene__canvas" ref={mountRef} />
-      <button
-        type="button"
-        className="school-entry-shortcut"
-        onClick={activateSchoolFromKeyboard}
-      >
-        进入中南民族大学经历
-      </button>
+      {mapLandmarks.map((landmark) => (
+        <button
+          type="button"
+          className="school-entry-shortcut"
+          onClick={() => activateLandmarkFromKeyboard(landmark.id)}
+          key={landmark.id}
+        >
+          进入{landmark.title}经历
+        </button>
+      ))}
     </main>
   );
 }

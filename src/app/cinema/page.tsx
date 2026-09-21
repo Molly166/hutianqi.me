@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
+import CinemaExperience from "@/components/cinema/CinemaExperience";
 import FootstepBackLink from "@/components/journey/FootstepBackLink";
-import SchoolExperience from "@/components/school/SchoolExperience";
 
 export const metadata: Metadata = {
   title: "hutianqi.me",
-  description: "胡天齐在中南民族大学的经历。",
+  description: "胡天齐的观影记录。",
 };
 
-export default function SchoolPage() {
+export default function CinemaPage() {
   return (
     <main className="school-detail">
       <h1 className="sr-only" data-journey-heading tabIndex={-1}>
-        中南民族大学
+        观影记录
       </h1>
-      <FootstepBackLink transitionLabel="正在离开学校，返回人生地图" />
-      <SchoolExperience />
+      <FootstepBackLink transitionLabel="正在离开影院，返回人生地图" />
+      <CinemaExperience />
     </main>
   );
 }

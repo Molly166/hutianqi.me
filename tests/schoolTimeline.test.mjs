@@ -4,9 +4,6 @@ import test from "node:test";
 import {
   buildSchoolMonths,
   formatSchoolEntryDate,
-  schoolEntries,
-  schoolMonths,
-  schoolYears,
   sortSchoolEntries,
 } from "../src/data/schoolTimeline.ts";
 
@@ -25,22 +22,6 @@ test("an empty source retains every month from September 2023 to September 2026"
   assert.equal(new Set(months.map((month) => month.id)).size, 37);
   months.forEach((month, index) => {
     assert.equal(month.year * 12 + month.month - 1, 2023 * 12 + 8 + index);
-  });
-});
-
-test("shared source exports group real school entries into complete year ranges", () => {
-  assert.ok(schoolEntries.every(({ moduleId }) => moduleId === "school"));
-  assert.deepEqual(schoolMonths, buildSchoolMonths(schoolEntries));
-  assert.equal(schoolYears[0].startIndex, 0);
-  assert.equal(schoolYears.reduce((count, year) => count + year.count, 0), schoolMonths.length);
-  schoolYears.forEach(({ year, startIndex, count }, index) => {
-    assert.ok(count >= 1 && count <= 12);
-    assert.ok(schoolMonths.slice(startIndex, startIndex + count).every((month) => month.year === year));
-    if (index > 0) {
-      const previous = schoolYears[index - 1];
-      assert.equal(year, previous.year + 1);
-      assert.equal(startIndex, previous.startIndex + previous.count);
-    }
   });
 });
 

@@ -1,5 +1,5 @@
-import TwinTowerLibraryScene from "@/components/school/TwinTowerLibraryScene";
+import LifeMapScene from "@/components/map/LifeMapScene";
 
 export default function Home() {
-  return <TwinTowerLibraryScene />;
+  return <LifeMapScene />;
 }
