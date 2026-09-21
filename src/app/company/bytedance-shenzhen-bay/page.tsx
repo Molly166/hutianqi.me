@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
 import FootstepBackLink from "@/components/journey/FootstepBackLink";
-import SchoolExperience from "@/components/school/SchoolExperience";
 
 export const metadata: Metadata = {
   title: "hutianqi.me",
-  description: "胡天齐在中南民族大学的经历。",
+  description: "胡天齐在字节跳动深圳湾工区的经历。",
 };
 
-export default function SchoolPage() {
+export default function ByteDanceShenzhenBayPage() {
   return (
     <main className="school-detail">
       <h1 className="sr-only" data-journey-heading tabIndex={-1}>
-        中南民族大学
+        字节跳动深圳湾工区
       </h1>
-      <FootstepBackLink transitionLabel="正在离开学校，返回人生地图" />
-      <SchoolExperience />
+      <FootstepBackLink transitionLabel="正在离开字节跳动深圳湾工区，返回人生地图" />
     </main>
   );
 }

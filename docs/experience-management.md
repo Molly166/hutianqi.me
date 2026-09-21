@@ -1,99 +1,122 @@
 # 经历便签管理
 
-这是一个可复用的本地内容管理能力，不是访客留言系统，也不是网站后台。学校、公司、实习、工作、生活共用同一种数据格式；当前只有学校详情页接入展示，其他模块可以先存内容，后续再接入对应页面。
+这是一个本地内容管理能力，不是访客留言系统或网站后台。每个事件单独保存在一个 JSON 文件中；不存在需要不断扩大的 `entries` 总表。
 
-## 以后如何提供内容
+## 不借助助手时，在哪里添加
 
-直接告诉助手「模块 + 操作 + 内容」即可。例如：
+在对应模块目录中新建一个 JSON 文件：
 
-- 「学校，新增：2023 年 9 月 12 日，文字是……，配这两张图片。」
-- 「学校，修改：把 2023 年 9 月 12 日那条的第二张图片换成这张。」
-- 「生活，删除：删掉 ID 为 `xxx` 的便签。」
+```text
+src/data/experiences/
+├── school/       学校
+├── company/      公司
+├── internship/   实习
+├── work/         工作
+├── life/         生活
+└── watch/        观影
+```
 
-助手先按模块、日期、现有文字定位记录；如果同一天有多条相似内容，先与你确认，不猜测删除对象。真实日期和内容缺失时，不编造经历，也不把测试数据放入正式内容。完成后只修改本地文件并验收；未明确要求时不 push、不合并分支。
+文件名以事件日期开头。某天只有一条时使用 `YYYY-MM-DD.json`；同一天有多条时依次使用 `YYYY-MM-DD-01.json`、`YYYY-MM-DD-02.json`。文件名日期必须和 JSON 中的 `date` 一致。同一天的展示顺序是无后缀文件在前，其后按后缀字典序排列。
 
-## 数据位置与模块
+例如，学校事件可以放在：
 
-统一数据源是 `src/data/experiences.json`，纯数据操作函数在 `src/lib/experiences.ts`。
+```text
+src/data/experiences/school/2023-09-12.json
+```
 
-| 模块 | moduleId |
-| --- | --- |
-| 学校 | `school` |
-| 公司 | `company` |
-| 实习 | `internship` |
-| 工作 | `work` |
-| 生活 | `life` |
-
-每张便签都有独立、稳定且全局唯一的 `id`。修改日期、图片或文字不会改变 ID。展示按日期从早到晚排序，同一天的便签保留录入顺序；不需要人为调整 JSON 中的位置。学校页面按年月分组，无内容的月份保持空白。
-
-单条记录的结构如下。这只是格式示例，不应直接写入正式数据：
+文件本身只写这一件事，不要包一层数组，也不要填写 `moduleId`：
 
 ```json
 {
-  "id": "稳定且唯一的记录 ID",
-  "moduleId": "school",
+  "id": "school-2023-09-12",
   "date": "2023-09-12",
-  "title": "可选标题",
-  "text": "真实文字，可以包含换行。",
+  "title": "初入校园",
+  "text": "今天正式开始大学生活。",
   "images": [
     {
-      "src": "/images/experiences/school/记录ID/campus.jpg",
-      "alt": "图片的实际内容描述"
+      "src": "/images/experiences/school/2023-09-12/campus.jpg",
+      "alt": "初入校园时拍摄的校园照片"
     }
   ]
 }
 ```
 
-日期必须是真实的 `YYYY-MM-DD` 日期。标题、正文、图片至少有一种；允许纯文字、纯图片或图文混排。每张图片都有地址和替代文字 `alt`，一个便签支持多张图片。
+`moduleId` 由父目录推断，`id` 由模块和文件名共同确定：`school/2023-09-12.json` 的 ID 必须是 `school-2023-09-12`，`school/2023-09-12-01.json` 的 ID 必须是 `school-2023-09-12-01`。标题、正文或图片更新不会改变 ID；日期更新会同步改变文件名和 ID。
 
-## 命令入口
+日期必须是实际存在的 `YYYY-MM-DD` 日期。`title`、`text`、`images` 至少有一项有效内容；允许纯文字、纯图片或图文混排。每张图片都必须包含网站地址和替代文字 `alt`。
 
-在项目根目录运行，要求 Node.js 22+。命令共用同一套校验、排序和增删改函数。`--input` 指向本地 JSON 文件；相对路径从当前终端目录计算。
-
-项目也提供短入口：`npm run experience -- list --module school`。以下命令中的 `node --experimental-strip-types scripts/experiences.mjs` 都可以替换为 `npm run experience --`。
+手工添加后，在项目根目录运行：
 
 ```bash
-# 查询学校模块，结果包括每条的 ID，按日期排序
-node --experimental-strip-types scripts/experiences.mjs list --module school
-
-# 查询所有模块
-node --experimental-strip-types scripts/experiences.mjs list
-
-# 新增：note.json 至少包含 date 和 title/text/images 中的一种
-# id 可以省略，工具会生成 UUID；moduleId 可省略，由 --module 指定
-node --experimental-strip-types scripts/experiences.mjs add --module school --input note.json --dry-run
-node --experimental-strip-types scripts/experiences.mjs add --module school --input note.json
-
-# 修改：patch.json 只填写要改的字段，例如 {"text":"新的真实文字"}
-node --experimental-strip-types scripts/experiences.mjs update --module school --id 记录ID --input patch.json --dry-run
-node --experimental-strip-types scripts/experiences.mjs update --module school --id 记录ID --input patch.json
-
-# 删除：必须同时指定正确的模块和记录 ID
-node --experimental-strip-types scripts/experiences.mjs remove --module school --id 记录ID --dry-run
-node --experimental-strip-types scripts/experiences.mjs remove --module school --id 记录ID
+npm run experience -- list --module school
+npm test
+npm run build
 ```
 
-`--dry-run` 会完整校验并输出预计结果，但不会写入数据。若新增时省略 ID，试运行和正式运行会各自生成一个 UUID；以正式运行返回的 ID 为准。需要预先固定图片目录时，可以先生成并在输入中明确填写 ID。
+这些命令会检查文件名、日期、模块、全局重复 ID 和内容格式。学校与观影详情页已经接入展示，其他模块可以先保存内容，后续再接入页面。
 
-修改正文或标题时，传入空字符串可以清空该字段；`images: []` 可以移除全部图片引用；不使用 `null`。清空后仍需保留至少一种非空标题、文字或图片。不能通过更新修改 ID，也不能用另一个模块的命令改删现有记录。JSON 中没有写到的字段保持不变。
+## 使用命令增删改查
 
-所有变更先校验，成功后通过同目录临时文件原子替换数据文件；失败不会把半写入的数据留在正式 JSON 中。请一次运行一个内容编辑操作，不要同时从多个终端修改同一个数据文件。可用 `--store /绝对路径/测试数据.json` 对另一个已有数据文件操作，测试不要指向正式内容。
+命令要求 Node.js 22+。`--input` 指向一个本地 JSON 文件，相对路径从当前终端目录计算。
+
+```bash
+# 查询学校模块；不传 --module 时查询全部模块
+npm run experience -- list --module school
+npm run experience -- list
+
+# 新增；note.json 通常省略 id，命令按模块、日期自动生成
+npm run experience -- add --module school --input note.json --dry-run
+npm run experience -- add --module school --input note.json
+
+# 修改；patch.json 只填写要改的 date/title/text/images
+npm run experience -- update --module school --id 记录ID --input patch.json --dry-run
+npm run experience -- update --module school --id 记录ID --input patch.json
+
+# 删除；必须同时给出正确模块和当前 ID
+npm run experience -- remove --module school --id 记录ID --dry-run
+npm run experience -- remove --module school --id 记录ID
+```
+
+新增输入只允许 `id`、`date`、`title`、`text`、`images`；其中 `id` 建议省略，`date` 必填。命令会选择当天编号最小的空闲位置：第一条是 `YYYY-MM-DD.json` 和 `<module>-YYYY-MM-DD`，后续是 `-01`、`-02`。如果明确填写 ID，它必须正好等于这次应生成的 ID。输出的 `file` 和 `entry.id` 是最终结果；相同目录状态下，试运行和正式运行的结果一致。
+
+更新输入只允许 `date`、`title`、`text`、`images`，不能直接填写 `id` 或移动模块。未出现的字段保持不变；用空字符串清空标题或正文，用 `images: []` 清空图片引用，不使用 `null`。清空后仍需至少保留一种有效内容。修改日期时，命令会优先保留原来的同日序号；如该位置已占用，则选择新日期下编号最小的空闲位置，并同步修改 ID。输出中的 `previousId`、`previousFile` 和新的 `entry.id`、`file` 会明确列出变化。
+
+`--dry-run` 会执行完整读取、查找、合并和校验，但不会创建、替换、重命名或删除任何文件。测试其他数据目录时使用 `--root /绝对路径/experiences`；旧的 `--store` 单文件参数已移除。
+
+每次真实操作只写目标事件：
+
+- 新增先写同目录临时文件，再发布为新的事件文件，绝不覆盖同名文件。
+- 更新先检查原文件没有被改动，再用完整的新 JSON 原子替换；日期变化时发布新日期文件并移除旧文件。
+- 删除再次确认原文件未变化后，只删除该事件 JSON。
+- 失败会清理本次临时文件，不会重写其他事件。
+
+请一次只运行一个内容编辑操作，也不要在命令执行时同时手工修改目标文件。
 
 ## 图片如何接入
 
-1. 助手接收你提供的真实图片后，将要公开展示的版本放到 `public/images/experiences/<moduleId>/<记录ID>/`。使用清晰且不冲突的文件名，避免覆盖其他便签的资源。
-2. 数据中的 `src` 优先使用网站根路径，例如 `/images/experiences/school/记录ID/campus.jpg`，不能使用 `/Users/...` 这类电脑路径。也支持完整的 `https://...` 或 `http://...` 图片地址，建议使用 HTTPS 并确认有使用权限；外链可能失效。相对路径、`//...`、`data:`、`blob:`、反斜杠和未编码空白字符会被拒绝，文件名中的空格应编码为 `%20`。
-3. 多张图片按照 `images` 数组的顺序展示；修改其中一张时，保留其他图片的引用与顺序。
-4. 页面是公开的。发布前检查照片、文字和图片元数据是否含不希望公开的信息。不要在数据文件放账号、密钥或私人文件地址。
+公开图片建议放在：
 
-命令只处理记录，不上传、下载或删除图片。删除便签仅删除该记录；移除图片引用不会删除图片文件，以免误伤共用资源。需要清理无用图片时，应单独检查所有引用，再确认具体文件。
-
-## 后续复用与验收
-
-其他模块继续使用这一数据源、`listExperiences(store, moduleId)` 和统一增删改接口，不复制一套学校专用内容管理逻辑。新增模块时先登记唯一的模块 ID，再接入对应页面；不需要改动已有便签结构。
-
-每次更新后至少检查日期、目标模块、记录 ID、图片路径、图文内容与页面排序。命令测试使用独立临时目录，不修改正式内容：
-
-```bash
-node --experimental-strip-types --test tests/experiences-cli.test.mjs
+```text
+public/images/experiences/<moduleId>/<事件文件名去掉.json>/
 ```
+
+数据中的 `src` 使用网站根路径，例如 `/images/experiences/school/2023-09-12/campus.jpg`，不能填写 `/Users/...` 这类电脑路径。也支持完整的 `https://` 或 `http://` 地址。相对路径、`//...`、`data:`、`blob:`、反斜杠和未编码空白会被拒绝；文件名中的空格应写成 `%20`。
+
+命令只维护 JSON 引用，不上传、下载或删除图片文件：
+
+- 更新时未填写 `images`，原图片列表完整保留。
+- `images: []` 只移除引用，不删除磁盘图片。
+- 删除事件只删除该 JSON，不删除其图片目录。
+- 修改事件日期不会自动搬动图片；现有 `src` 和图片目录会原样保留。
+
+需要清理无用图片时，应先检查所有事件引用，再单独确认具体资源，避免误删共用图片。
+
+## 提供内容给助手时
+
+直接说明「模块 + 操作 + 内容」即可，例如：
+
+- 「学校，新增：2023 年 9 月 12 日，文字是……，配这两张图片。」
+- 「学校，修改：把 ID 为 `xxx` 的第二张图片换成这张。」
+- 「生活，删除：删掉 ID 为 `xxx` 的便签。」
+
+如果同一天有多条相似内容，助手会先确认目标，不猜测删除对象。真实日期或内容缺失时，不编造经历，也不把测试数据写入正式目录。未明确要求时，不 push、不合并分支。

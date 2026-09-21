@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { schoolLandmark } from "@/data/landmarks";
+import { addLogoDecal, markLandmark } from "@/components/map/modelUtils";
 
 const ivory = new THREE.MeshStandardMaterial({
   color: 0xd8d2c0,
@@ -29,24 +30,12 @@ const windowGlass = new THREE.MeshStandardMaterial({
   metalness: 0.16,
 });
 
-const trunkMaterial = new THREE.MeshStandardMaterial({
-  color: 0x5c4937,
-  roughness: 1,
-});
-
-const foliageMaterial = new THREE.MeshStandardMaterial({
-  color: 0x476b55,
-  roughness: 0.95,
-});
-
 const sharedMaterials = [
   ivory,
   paleStone,
   roofGreen,
   darkGlass,
   windowGlass,
-  trunkMaterial,
-  foliageMaterial,
 ];
 sharedMaterials.forEach((material) => {
   material.userData.shared = true;
@@ -221,10 +210,8 @@ function addCurvedColonnade(parent: THREE.Object3D) {
   }
 }
 
-export function createLibrary() {
+export function createLibrary(onAssetReady?: () => void) {
   const building = new THREE.Group();
-  building.name = schoolLandmark.id;
-  building.userData.landmark = schoolLandmark;
   building.rotation.y = -0.08;
 
   box(building, [10.8, 0.64, 3.85], [0, 0.55, 0.12], paleStone);
@@ -237,44 +224,18 @@ export function createLibrary() {
   addTower(building, 1.7);
   addWindows(building);
   addCurvedColonnade(building);
+  addLogoDecal(building, {
+    src: "/images/landmarks/logos/scuec.jpg",
+    size: [0.86, 0.86],
+    position: [0, 2.55, 0.646],
+    shape: "circle",
+    onReady: onAssetReady,
+  });
 
   for (const x of [-4.58, 4.58]) {
     box(building, [1.0, 0.62, 1.15], [x, 2.02, 0.1], ivory);
     addRoof(building, [x, 2.32, 0.1], 1.25, 1.34, 0.26);
   }
 
-  building.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-      child.userData.landmarkId = schoolLandmark.id;
-      child.userData.landmarkType = schoolLandmark.type;
-      child.userData.hoverable = true;
-    }
-  });
-
-  return building;
-}
-
-export function createTree(x: number, z: number, scale = 1) {
-  const tree = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.09, 0.78, 7),
-    trunkMaterial,
-  );
-  trunk.position.y = 0.62;
-  trunk.castShadow = true;
-  tree.add(trunk);
-
-  const crown = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.48, 1),
-    foliageMaterial,
-  );
-  crown.scale.set(0.85, 1.2, 0.85);
-  crown.position.y = 1.25;
-  crown.castShadow = true;
-  tree.add(crown);
-  tree.position.set(x, 0, z);
-  tree.scale.setScalar(scale);
-  return tree;
+  return markLandmark(building, schoolLandmark);
 }

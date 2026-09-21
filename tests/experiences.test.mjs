@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import storedExperiences from "../src/data/experiences.json" with { type: "json" };
+import { EXPERIENCE_MODULES } from "../src/data/experienceModules.ts";
 import {
   addExperience,
   formatExperienceDate,
@@ -10,7 +10,11 @@ import {
   validateExperienceStore,
 } from "../src/lib/experiences.ts";
 
-const baseStore = () => validateExperienceStore({ ...storedExperiences, entries: [] });
+const baseStore = () => validateExperienceStore({
+  version: 1,
+  modules: EXPERIENCE_MODULES.map((module) => ({ ...module })),
+  entries: [],
+});
 const entry = (id, moduleId = "school", date = "2024-09-01", content = { text: id }) => ({
   id, moduleId, date, ...content,
 });
@@ -23,8 +27,8 @@ function freezeDeep(value) {
   return value;
 }
 
-test("the shared source is valid and has five named modules", () => {
-  const store = validateExperienceStore(storedExperiences);
+test("the shared module registry is valid and has six named modules", () => {
+  const store = baseStore();
   assert.equal(store.version, 1);
   assert.deepEqual(store.modules, [
     { id: "school", label: "学校" },
@@ -32,6 +36,7 @@ test("the shared source is valid and has five named modules", () => {
     { id: "internship", label: "实习" },
     { id: "work", label: "工作" },
     { id: "life", label: "生活" },
+    { id: "watch", label: "观影" },
   ]);
 });
 
