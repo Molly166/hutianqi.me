@@ -282,7 +282,7 @@ async function main() {
 
   if (command === "add") {
     const input = await readInput(options.input);
-    requireKnownFields(input, ["id", "date", "title", "text", "images"], "Experience input");
+    requireKnownFields(input, ["id", "date", "title", "text", "textEn", "images"], "Experience input");
     const hasExplicitId = Object.hasOwn(input, "id");
     const validationId = randomUUID();
     const validatedInputStore = addExperience(store, {
@@ -314,7 +314,7 @@ async function main() {
     if (command === "update") {
       const patch = await readInput(options.input);
       if (Object.keys(patch).length === 0) throw new Error("Update input must contain at least one field.");
-      requireKnownFields(patch, ["date", "title", "text", "images"], "Experience update");
+      requireKnownFields(patch, ["date", "title", "text", "textEn", "images"], "Experience update");
       const contentUpdatedStore = updateExperience(store, options.id, patch);
       const contentUpdatedEntry = contentUpdatedStore.entries.find((candidate) => candidate.id === options.id);
       if (contentUpdatedEntry.date !== record.entry.date) {

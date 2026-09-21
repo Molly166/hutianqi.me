@@ -86,7 +86,8 @@ test("add, list, update, and remove operate on one independent event file", asyn
   const unrelatedPath = f.path("life", "2022-01-01.json");
   const unrelatedSource = await readFile(unrelatedPath, "utf8");
   const input = await f.input("note.json", {
-    date: "2023-09-15", text: "临时测试内容", images: [{ src: "/images/test.jpg", alt: "测试图片" }],
+    date: "2023-09-15", text: "临时测试内容", textEn: "Temporary test content",
+    images: [{ src: "/images/test.jpg", alt: "测试图片" }],
   });
 
   const added = successful(f.run("add", "--module", "school", "--input", input));
@@ -96,14 +97,18 @@ test("add, list, update, and remove operate on one independent event file", asyn
   assert.equal(added.totalEntries, 2);
   const saved = JSON.parse(await readFile(added.file, "utf8"));
   assert.equal(saved.id, added.entry.id);
+  assert.equal(saved.textEn, "Temporary test content");
   assert.equal(Object.hasOwn(saved, "moduleId"), false);
   assert.equal(successful(f.run("list", "--module", "school"))[0].id, added.entry.id);
 
-  const patch = await f.input("patch.json", { text: "已修改的临时内容", date: "2024-02-29" });
+  const patch = await f.input("patch.json", {
+    text: "已修改的临时内容", textEn: "Updated temporary content", date: "2024-02-29",
+  });
   const updated = successful(f.run("update", "--module", "school", "--id", added.entry.id, "--input", patch));
   assert.equal(updated.previousId, added.entry.id);
   assert.equal(updated.entry.id, "school-2024-02-29");
   assert.equal(updated.entry.text, "已修改的临时内容");
+  assert.equal(updated.entry.textEn, "Updated temporary content");
   assert.deepEqual(updated.entry.images, added.entry.images);
   assert.equal(updated.file, f.path("school", "2024-02-29.json"));
   assert.equal(await exists(added.file), false);

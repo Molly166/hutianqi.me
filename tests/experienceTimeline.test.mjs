@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildExperienceDays,
   buildExperienceMonths,
   sortExperienceEntries,
 } from "../src/data/experienceTimeline.ts";
@@ -62,4 +63,63 @@ test("invalid default month ranges fail clearly", () => {
     }),
     /start must not be after/,
   );
+});
+
+test("daily periods filter by module, preserve same-day order, and split distinct dates", () => {
+  const entries = [
+    entry("watch-next", "watch", "2025-04-21"),
+    entry("life-note", "life", "2025-04-20"),
+    entry("watch-first", "watch", "2025-04-20"),
+    entry("watch-second", "watch", "2025-04-20"),
+  ];
+  const snapshot = structuredClone(entries);
+
+  const days = buildExperienceDays(entries, "watch");
+
+  assert.deepEqual(days.map(({ id }) => id), ["2025-04-20", "2025-04-21"]);
+  assert.deepEqual(days[0].entries.map(({ id }) => id), ["watch-first", "watch-second"]);
+  assert.deepEqual(days[1].entries.map(({ id }) => id), ["watch-next"]);
+  assert.deepEqual(entries, snapshot);
+});
+
+test("daily periods expose calendar fields and labels across month and year boundaries", () => {
+  const days = buildExperienceDays([
+    entry("new-year", "watch", "2026-01-01"),
+    entry("year-end", "watch", "2025-12-31"),
+    entry("next-month", "watch", "2026-02-01"),
+  ], "watch");
+
+  assert.deepEqual(days.map(({ id, year, month, day, label }) => ({
+    id,
+    year,
+    month,
+    day,
+    label,
+  })), [
+    {
+      id: "2025-12-31",
+      year: 2025,
+      month: 12,
+      day: 31,
+      label: "2025年12月31日",
+    },
+    {
+      id: "2026-01-01",
+      year: 2026,
+      month: 1,
+      day: 1,
+      label: "2026年1月1日",
+    },
+    {
+      id: "2026-02-01",
+      year: 2026,
+      month: 2,
+      day: 1,
+      label: "2026年2月1日",
+    },
+  ]);
+});
+
+test("daily periods are empty when their source is empty", () => {
+  assert.deepEqual(buildExperienceDays([], "watch"), []);
 });

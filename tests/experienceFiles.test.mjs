@@ -109,6 +109,8 @@ test("event parsing infers moduleId and serialization never stores it", () => {
     id: "life-2024-02-29",
     date: "2024-02-29",
     title: "Leap day",
+    text: "闰日",
+    textEn: "Leap day",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
   const entry = parseExperienceFile(source, "life", "/virtual/life/leap.json");
@@ -117,12 +119,16 @@ test("event parsing infers moduleId and serialization never stores it", () => {
     moduleId: "life",
     date: "2024-02-29",
     title: "Leap day",
+    text: "闰日",
+    textEn: "Leap day",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
   assert.deepEqual(experienceFileData(entry), {
     id: "life-2024-02-29",
     date: "2024-02-29",
     title: "Leap day",
+    text: "闰日",
+    textEn: "Leap day",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
 

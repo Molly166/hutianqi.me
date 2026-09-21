@@ -1,32 +1,33 @@
 "use client";
 
 import { type CSSProperties, type KeyboardEvent, useEffect, useRef } from "react";
-import type { ExperiencePeriod } from "./ExperienceCollection";
+import type { ExperiencePeriod, ExperiencePeriodUnit } from "./ExperienceCollection";
 
 interface Props {
-  months: readonly ExperiencePeriod[];
+  periods: readonly ExperiencePeriod[];
+  unit: ExperiencePeriodUnit;
   selectedIndex: number;
   onSelect: (index: number) => void;
   label: string;
 }
 
-export default function ExperienceTimeline({ months, selectedIndex, onSelect: setSelectedIndex, label }: Props) {
-  const years = months.reduce<Array<{ year: number; startIndex: number; count: number }>>((years, month, index) => {
+export default function ExperienceTimeline({ periods, unit, selectedIndex, onSelect: setSelectedIndex, label }: Props) {
+  const years = periods.reduce<Array<{ year: number; startIndex: number; count: number }>>((years, period, index) => {
     const last = years.at(-1);
-    if (last?.year === month.year) last.count += 1;
-    else years.push({ year: month.year, startIndex: index, count: 1 });
+    if (last?.year === period.year) last.count += 1;
+    else years.push({ year: period.year, startIndex: index, count: 1 });
     return years;
   }, []);
   const timelineViewport = useRef<HTMLDivElement>(null);
-  const monthButtons = useRef<Array<HTMLButtonElement | null>>([]);
-  const selectedMonth = months[selectedIndex];
+  const periodButtons = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectedPeriod = periods[selectedIndex];
 
   useEffect(() => {
     const viewport = timelineViewport.current;
-    const button = monthButtons.current[selectedIndex];
+    const button = periodButtons.current[selectedIndex];
     if (!viewport || !button) return;
 
-    // A new choice must also cancel an unfinished scroll to the previous month.
+    // A new choice must also cancel an unfinished scroll to the previous period.
     viewport.scrollTo({ left: viewport.scrollLeft, behavior: "instant" });
     const revealSelection = (animate: boolean) => {
       const viewportRect = viewport.getBoundingClientRect();
@@ -58,22 +59,22 @@ export default function ExperienceTimeline({ months, selectedIndex, onSelect: se
     return () => observer.disconnect();
   }, [selectedIndex]);
 
-  const handleMonthKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const handlePeriodKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let nextIndex: number;
     switch (event.key) {
       case "ArrowRight":
       case "ArrowDown":
-        nextIndex = (index + 1) % months.length;
+        nextIndex = (index + 1) % periods.length;
         break;
       case "ArrowLeft":
       case "ArrowUp":
-        nextIndex = (index - 1 + months.length) % months.length;
+        nextIndex = (index - 1 + periods.length) % periods.length;
         break;
       case "Home":
         nextIndex = 0;
         break;
       case "End":
-        nextIndex = months.length - 1;
+        nextIndex = periods.length - 1;
         break;
       default:
         return;
@@ -81,7 +82,7 @@ export default function ExperienceTimeline({ months, selectedIndex, onSelect: se
 
     event.preventDefault();
     setSelectedIndex(nextIndex);
-    monthButtons.current[nextIndex]?.focus({ preventScroll: true });
+    periodButtons.current[nextIndex]?.focus({ preventScroll: true });
   };
 
   return (
@@ -90,7 +91,7 @@ export default function ExperienceTimeline({ months, selectedIndex, onSelect: se
         <div
           className="experience-timeline__ruler"
           style={{
-            "--month-count": months.length,
+            "--period-count": periods.length,
           } as CSSProperties}
         >
           <div className="experience-timeline__years">
@@ -99,9 +100,9 @@ export default function ExperienceTimeline({ months, selectedIndex, onSelect: se
                 key={year.year}
                 type="button"
                 className="experience-timeline__year"
-                data-active={year.year === selectedMonth.year}
+                data-active={year.year === selectedPeriod.year}
                 style={{ gridColumn: `${year.startIndex + 1} / span ${year.count}` }}
-                aria-label={`跳到${months[year.startIndex].label}`}
+                aria-label={`跳到${periods[year.startIndex].label}`}
                 onClick={() => setSelectedIndex(year.startIndex)}
               >
                 {year.year}
@@ -109,20 +110,20 @@ export default function ExperienceTimeline({ months, selectedIndex, onSelect: se
             ))}
           </div>
 
-          <div className="experience-timeline__months" role="radiogroup" aria-label={`选择${label}月份`}>
-            {months.map((month, index) => (
+          <div className="experience-timeline__months" role="radiogroup" aria-label={`选择${label}${unit === "day" ? "日期" : "月份"}`}>
+            {periods.map((period, index) => (
               <button
-                key={month.id}
-                ref={(node) => { monthButtons.current[index] = node; }}
+                key={period.id}
+                ref={(node) => { periodButtons.current[index] = node; }}
                 type="button"
                 role="radio"
-                aria-label={month.label}
+                aria-label={period.label}
                 aria-checked={selectedIndex === index}
                 tabIndex={selectedIndex === index ? 0 : -1}
                 className="experience-timeline__month"
-                data-major={month.month === 1 || index === 0}
+                data-major={index === 0 || (unit === "month" ? period.month === 1 : period.day === 1)}
                 onClick={() => setSelectedIndex(index)}
-                onKeyDown={(event) => handleMonthKey(event, index)}
+                onKeyDown={(event) => handlePeriodKey(event, index)}
               >
                 <span className="experience-timeline__tick" aria-hidden="true" />
               </button>
