@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import Image from "next/image";
+import { getAdjacentExperienceImageSources } from "@/lib/experienceImagePreload";
 import { formatExperienceDate, type ExperienceEntry } from "@/lib/experiences";
 import ExperienceTimeline from "./ExperienceTimeline";
 
@@ -191,9 +192,54 @@ export default function ExperienceCollection({ periods, label, periodUnit = "mon
     revision: number;
   }>({ id: periods[0]?.id ?? "", previousId: null, direction: null, revision: 0 });
   const pointerStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  const requestedImagePreloads = useRef(new Set<string>());
+  const pendingImagePreloads = useRef(new Map<string, HTMLImageElement>());
   const selectedIndex = Math.max(0, periods.findIndex((period) => period.id === selection.id));
   const current = periods[selectedIndex];
   const previous = periods.find((period) => period.id === selection.previousId && period.id !== current?.id);
+
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+
+    const sources = getAdjacentExperienceImageSources(periods, selectedIndex);
+    if (!sources.length) return;
+
+    const startPreloading = () => {
+      for (const src of sources) {
+        if (requestedImagePreloads.current.has(src)) continue;
+
+        requestedImagePreloads.current.add(src);
+        const image = new window.Image();
+        image.decoding = "async";
+        image.fetchPriority = "low";
+        pendingImagePreloads.current.set(src, image);
+
+        image.onload = () => {
+          pendingImagePreloads.current.delete(src);
+        };
+        image.onerror = () => {
+          pendingImagePreloads.current.delete(src);
+          requestedImagePreloads.current.delete(src);
+        };
+        image.src = src;
+      }
+    };
+
+    let idleCallbackId: number | undefined;
+    let fallbackTimerId: number | undefined;
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleCallbackId = window.requestIdleCallback(startPreloading, { timeout: 800 });
+    } else {
+      fallbackTimerId = window.setTimeout(startPreloading, 250);
+    }
+
+    return () => {
+      if (idleCallbackId !== undefined) window.cancelIdleCallback(idleCallbackId);
+      if (fallbackTimerId !== undefined) window.clearTimeout(fallbackTimerId);
+    };
+  }, [periods, selectedIndex]);
 
   useEffect(() => {
     if (!selection.previousId) return;
