@@ -101,21 +101,21 @@ test("daily periods expose calendar fields and labels across month and year boun
       year: 2025,
       month: 12,
       day: 31,
-      label: "2025年12月31日",
+      label: "December 31, 2025",
     },
     {
       id: "2026-01-01",
       year: 2026,
       month: 1,
       day: 1,
-      label: "2026年1月1日",
+      label: "January 1, 2026",
     },
     {
       id: "2026-02-01",
       year: 2026,
       month: 2,
       day: 1,
-      label: "2026年2月1日",
+      label: "February 1, 2026",
     },
   ]);
 });

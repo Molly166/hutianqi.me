@@ -1,53 +1,53 @@
-# 经历便签框架验收
+# Experience Note Framework QA
 
-final result: passed
+Final result: passed.
 
-## 对照范围与证据
+## Scope and Evidence
 
-- 参考原图：`/var/folders/yd/p2jnshkn0k127_80fl5t4ymm0000gn/T/codex-clipboard-e176eace-5e14-4db1-8920-3b6201a3899d.png`，1080 × 1440。
-- 本地页面：`http://127.0.0.1:3000/school/`。
-- 桌面截图：`/private/tmp/hutianqi-experience-qa/desktop-final.jpg`，1280 × 720。
-- 手机截图：`/private/tmp/hutianqi-experience-qa/mobile-final.jpg`，390 × 844。
-- 历史空状态验收截图：`/private/tmp/hutianqi-experience-qa/empty-final.jpg`，1280 × 720。
-- 局部对照：`/private/tmp/hutianqi-experience-qa/reference-detail.png` 与 `implementation-detail.png`（同目录）。
-- 浏览器 DPR 为 2，截图输出已是 CSS 像素尺寸，不再缩放。原图是实物照片，不是同视口界面稿；仅比较材质、图钉、错落感及手写气质，不声称逐像素还原。
-- 原图、桌面/手机截图及两张局部截图已经放入同一次比较输入中查看。截图保留在临时目录，不打包进网站。
+- Reference image: `/var/folders/yd/p2jnshkn0k127_80fl5t4ymm0000gn/T/codex-clipboard-e176eace-5e14-4db1-8920-3b6201a3899d.png`, 1080 × 1440.
+- Local page: `http://127.0.0.1:3000/school/`.
+- Desktop screenshot: `/private/tmp/hutianqi-experience-qa/desktop-final.jpg`, 1280 × 720.
+- Mobile screenshot: `/private/tmp/hutianqi-experience-qa/mobile-final.jpg`, 390 × 844.
+- Historical empty-state screenshot: `/private/tmp/hutianqi-experience-qa/empty-final.jpg`, 1280 × 720.
+- Detail comparison: `/private/tmp/hutianqi-experience-qa/reference-detail.png` and `implementation-detail.png` in the same directory.
+- The browser DPR was 2. Screenshots were already exported at CSS-pixel dimensions and were not resized again. The reference is a physical photograph rather than a same-viewport interface design, so the comparison covers materials, pins, staggered composition, and handwriting character rather than claiming pixel-perfect reproduction.
+- The reference, desktop and mobile screenshots, and both detail images were reviewed together. Screenshots remain in the temporary directory and are not bundled with the website.
 
-## 状态和有意保留的差异
+## State and Intentional Differences
 
-原始视觉验收使用过明确标记为“排版测试”的临时数据：九月五张便签、十月一张，用于测试文字长度、换行、图片比例、空月份与日期顺序。图中纯色方形是用于验收图片布局的纸张纹理，不是真实照片；这些 QA 测试夹具已全部移除。正式经历采用“一件事情一个 JSON”的目录结构维护，当前没有已发布的经历事件。
+The original visual QA used clearly labeled layout-test data: five notes in September and one in October. These fixtures tested text length, wrapping, image ratios, empty months, and date order. The solid-color squares were paper textures for image-layout verification, not real photographs. All QA fixtures were removed. Production experiences use one JSON file per event; no experience event had been published when this QA was completed.
 
-保留现有雾绿色背景、志莽行书和脚印返回；不加入参考图中的灯、首饰或别人的句子。独立便签以日期顺序逐行排列，避免重叠影响阅读；移动端改为单列，便签区独立纵向滚动。更密集的拼贴和真实照片构图留待真实内容到来后细调。
+The existing mist-green background, Kai-style system typeface, and footprint back control were retained. The reference image's lamp, jewelry, and quoted text were not copied. Individual notes were arranged row by row in date order to avoid readability issues caused by overlap. Mobile used a single column with independent vertical scrolling. Denser collage layouts and real-photo composition were deferred until real content became available.
 
-## 必检视觉面
+## Required Visual Checks
 
-| 项目 | 结论 |
+| Area | Result |
 | --- | --- |
-| 字体 | 沿用用户选定的本地志莽行书；日期位于便签顶部，标题/正文层级清晰，长文换行，无截字。不同于照片中较细的实际笔迹，属用户既定字体选择。 |
-| 布局节奏 | 桌面四列、手机单列，纸张轻微倾斜并保留错落间距；脚印与底部时间轴未被便签覆盖。320px 宽度无页面横向溢出。 |
-| 色彩 | 暖白纸、柔和阴影对照雾绿色底；不照搬照片的暗棕光线，以保留网站原有主题。 |
-| 资产 | 纸张和透明图钉为内置 ImageGen 生成的真实位图，不用 CSS 图形假画。WebP 合计 58,422 字节；128px 图钉缩小展示没有白底或明显透明边。 |
-| 文案 | 月份仅保留读屏标签，页面时间轴只显示年份；无新增身份标题、月份标题或左右箭头。视觉 QA 未保留虚构经历，当前内容来自逐事件 JSON 文件。 |
+| Typography | Uses the user-selected Kai-style system font stack. Dates appear at the top of each note; title and body hierarchy is clear; long text wraps without clipping. The result intentionally differs from the thinner handwriting in the reference photograph. |
+| Layout rhythm | Four columns on desktop and one column on mobile. Paper cards used subtle rotation and staggered spacing. Notes did not cover the footprint control or bottom timeline. A 320 px viewport had no horizontal page overflow. |
+| Color | Warm white paper and soft shadows contrasted with the mist-green background. The dark brown lighting of the reference was not copied, preserving the site's established theme. |
+| Assets | Paper and transparent pins were real bitmap assets generated with ImageGen, not simulated CSS shapes. The WebP files totaled 58,422 bytes. Pins displayed at 128 px had no white background or obvious transparency edge. |
+| Copy | Month labels remained available to screen readers while the visual timeline displayed years only. No identity heading, month heading, or left/right arrow was added. The visual QA kept no fictional experiences; production content came from per-event JSON files. |
 
-## 交互验证
+## Interaction Verification
 
-- 乱序输入显示为 09.01、09.12、09.23、09.26、09.28；同日排序由单元测试保证稳定。
-- 时间轴选择切换整个面板：出场 transform 为负 X，入场为正 X；出场板同时 `aria-hidden` 与 `inert`。
-- 向左拖动便签区以及图片区域均切换到下个月；空月份没有残留便签。
-- 长内容滚动后切换，出场板保留 scrollTop（实测 910），不跳回顶部。
-- Home/End/方向键、单一 radio tab stop、自动滚动选中刻度；手机刻度点击区 46 × 44px。
-- 新增 2027.12 测试日期自动扩展月份；选中该日期后移除测试数据，安全回落 2023.09，仍显示 37 个月及时间轴。
-- 手机纵向滚动便签不遮挡脚印和时间轴；390 × 844 与 320 × 740 均无文档横向溢出。
-- 脚印触发已有云层过渡并返回首页；首页模型及进入学校按钮仍存在。
-- 控制台 error/warn 为空。临时视口已 reset。
-- Reduced motion 样式/分支已静态检查：取消整板动画并立即换页；本轮未通过操作系统切换偏好做浏览器实测。
+- Unsorted input rendered as 09.01, 09.12, 09.23, 09.26, and 09.28. Unit tests guaranteed stable ordering for events on the same date.
+- Selecting the timeline replaced the entire board: the outgoing board used a negative-X transform and the incoming board used a positive-X transform. The outgoing board also received `aria-hidden` and `inert`.
+- Dragging left over the note area or an image advanced to the next month. Empty months retained no notes from the previous month.
+- After scrolling long content and changing months, the outgoing board retained its `scrollTop` value, measured at 910, instead of jumping to the top.
+- Home, End, and arrow-key navigation worked with a single radio tab stop and automatic scrolling to the selected tick. Mobile tick targets measured 46 × 44 px.
+- A test date in December 2027 extended the timeline automatically. Removing that test data while it was selected safely returned the view to September 2023 and preserved all 37 months and the timeline.
+- Vertical scrolling on mobile did not obscure the footprint control or timeline. Neither 390 × 844 nor 320 × 740 produced document-level horizontal overflow.
+- The footprint control triggered the existing cloud transition and returned to the home page. The home-page model and education entry control remained available.
+- The console contained no errors or warnings. The temporary viewport was reset.
+- Reduced-motion styles and branches were checked statically: board animations were disabled and page replacement happened immediately. The operating-system preference was not toggled for a browser-level test during this QA.
 
-## 检查历史与结论
+## Review History and Conclusion
 
-1. 首次桌面对照：材质、日期位置、竖线时间轴及空白边界符合本次适配范围，没有发现 P0/P1/P2 视觉问题。
-2. 代码审查另发现选中索引在时间范围缩短时越界，以及 revision key 导致出场滚动重置；已改为稳定月份 ID，浏览器分别验证删除扩展日期和 scrollTop 保持。这些是功能修复，不冒充视觉 QA 迭代。
-3. 优化图片体积后重新拍摄同一 1280 × 720 桌面状态并与参考和手机截图共同查看，未发现新的 P0/P1/P2 问题。纸纹、透明图钉、正文与日期均清晰。
+1. The first desktop comparison confirmed that materials, date placement, the vertical-line timeline, and blank-space boundaries matched the intended adaptation. No P0, P1, or P2 visual issues were found.
+2. Code review also found an out-of-range selected index when the date range contracted, plus an exit-scroll reset caused by the revision key. Stable month IDs fixed both issues. Browser checks covered removing an extended date and preserving `scrollTop`. These were functional fixes, not presented as visual-QA iteration.
+3. After image-size optimization, the same 1280 × 720 desktop state was captured again and reviewed with the reference and mobile screenshots. No new P0, P1, or P2 issues were found. Paper texture, transparent pins, body text, and dates remained clear.
 
-交付检查：32 项自动测试、ESLint、静态构建、`git diff --check` 通过；无演示数据；无 push/merge。新增公司/实习/工作/生活只完成共享数据能力，尚未新增相应页面或模型。
+Delivery checks: 32 automated tests, ESLint, static build, and `git diff --check` passed. No demo data remained. Nothing was pushed or merged. Shared data support existed for companies, internships, work, and life, but their pages and models had not yet been added.
 
-后续可选优化：收到真实照片与文字后再调每张便签的宽度、视觉密度及照片编排。
+Optional follow-up: adjust individual note widths, visual density, and photo composition after real images and copy are available.

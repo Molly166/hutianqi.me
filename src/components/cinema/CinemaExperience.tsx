@@ -6,5 +6,5 @@ import { listExperiences } from "@/lib/experiences";
 export default function CinemaExperience() {
   const watchEntries = listExperiences(loadExperienceStore(), "watch");
   const watchDays = buildExperienceDays(watchEntries, "watch");
-  return <ExperienceCollection periods={watchDays} periodUnit="day" label="观影记录" />;
+  return <ExperienceCollection periods={watchDays} periodUnit="day" label="Watch Journal" />;
 }

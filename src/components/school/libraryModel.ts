@@ -225,7 +225,7 @@ export function createLibrary(onAssetReady?: () => void) {
   addWindows(building);
   addCurvedColonnade(building);
   addLogoDecal(building, {
-    src: "/images/landmarks/logos/scuec.jpg",
+    src: "/images/landmarks/logos/scmu.svg",
     size: [0.86, 0.86],
     position: [0, 2.55, 0.646],
     shape: "circle",

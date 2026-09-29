@@ -5,7 +5,6 @@ export interface ExperienceEntry {
   date: string;
   title?: string;
   text?: string;
-  textEn?: string;
   images?: Array<{ src: string; alt: string }>;
 }
 
@@ -116,7 +115,7 @@ export function validateExperienceStore(store: unknown): ExperienceStore {
   const entries = source.entries.map((value, index): ExperienceEntry => {
     const context = `Experience entry at index ${index}`;
     const entry = requireObject(value, context);
-    requireKnownFields(entry, ["id", "moduleId", "date", "title", "text", "textEn", "images"], context);
+    requireKnownFields(entry, ["id", "moduleId", "date", "title", "text", "images"], context);
     const id = requireString(entry.id, `${context} id`, true);
     if (entryIds.has(id)) {
       throw new Error(`Duplicate experience entry id ${JSON.stringify(id)}.`);
@@ -135,9 +134,6 @@ export function validateExperienceStore(store: unknown): ExperienceStore {
     if (entry.text !== undefined) {
       result.text = requireString(entry.text, `Experience entry ${JSON.stringify(id)} text`);
     }
-    if (entry.textEn !== undefined) {
-      result.textEn = requireString(entry.textEn, `Experience entry ${JSON.stringify(id)} textEn`);
-    }
     if (entry.images !== undefined) {
       if (!Array.isArray(entry.images)) {
         throw new Error(`Experience entry ${JSON.stringify(id)} images must be an array.`);
@@ -152,7 +148,7 @@ export function validateExperienceStore(store: unknown): ExperienceStore {
         };
       });
     }
-    if (!result.title?.trim() && !result.text?.trim() && !result.textEn?.trim() && !result.images?.length) {
+    if (!result.title?.trim() && !result.text?.trim() && !result.images?.length) {
       throw new Error(`Experience entry ${JSON.stringify(id)} must contain a title, text, or at least one image.`);
     }
     return result;
@@ -194,7 +190,7 @@ export function updateExperience(
   if ("id" in updates) {
     throw new Error("An experience update cannot change its id.");
   }
-  requireKnownFields(updates, ["moduleId", "date", "title", "text", "textEn", "images"], "Experience update");
+  requireKnownFields(updates, ["moduleId", "date", "title", "text", "images"], "Experience update");
   const index = validated.entries.findIndex((entry) => entry.id === id);
   if (index < 0) {
     throw new Error(`Experience entry ${JSON.stringify(id)} was not found.`);

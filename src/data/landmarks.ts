@@ -9,32 +9,32 @@ export type LandmarkDefinition = {
 export const schoolLandmark = {
   id: "school-scuec",
   type: "school",
-  title: "中南民族大学",
-  landmark: "双子塔图书馆",
+  title: "South-Central Minzu University",
+  landmark: "Twin-Tower Library",
   href: "/school/",
 } satisfies LandmarkDefinition;
 
 export const geetestLandmark = {
   id: "company-geetest",
   type: "company",
-  title: "极验",
-  landmark: "武大航域二期 B3",
+  title: "GeeTest",
+  landmark: "Wuda Hangyu Phase II · B3",
   href: "/company/geetest/",
 } satisfies LandmarkDefinition;
 
 export const byteDanceShenzhenBayLandmark = {
   id: "company-bytedance-shenzhen-bay",
   type: "company",
-  title: "字节跳动",
-  landmark: "深圳湾创新科技工区",
+  title: "ByteDance",
+  landmark: "Shenzhen Bay Office",
   href: "/company/bytedance-shenzhen-bay/",
 } satisfies LandmarkDefinition;
 
 export const cinemaLandmark = {
   id: "interest-cinema",
   type: "interest",
-  title: "影院",
-  landmark: "观影记录",
+  title: "Cinema",
+  landmark: "Watch Journal",
   href: "/cinema/",
 } satisfies LandmarkDefinition;
 

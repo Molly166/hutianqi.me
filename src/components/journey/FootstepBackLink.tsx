@@ -9,7 +9,7 @@ export default function FootstepBackLink({
     <JourneyLink
       className="school-detail__back"
       href="/"
-      aria-label="沿脚步返回人生地图"
+      aria-label="Follow the footsteps back to the life map"
       transitionLabel={transitionLabel}
     >
       <svg

@@ -41,12 +41,12 @@ function writeJson(root, moduleId, fileName, data) {
 
 test("module metadata and the default source root are stable", () => {
   assert.deepEqual(EXPERIENCE_MODULES, [
-    { id: "school", label: "学校" },
-    { id: "company", label: "公司" },
-    { id: "internship", label: "实习" },
-    { id: "work", label: "工作" },
-    { id: "life", label: "生活" },
-    { id: "watch", label: "观影" },
+    { id: "school", label: "Education" },
+    { id: "company", label: "Companies" },
+    { id: "internship", label: "Internships" },
+    { id: "work", label: "Work" },
+    { id: "life", label: "Life" },
+    { id: "watch", label: "Watch Journal" },
   ]);
   assert.equal(DEFAULT_EXPERIENCES_ROOT, resolve(process.cwd(), "src/data/experiences"));
 });
@@ -109,8 +109,7 @@ test("event parsing infers moduleId and serialization never stores it", () => {
     id: "life-2024-02-29",
     date: "2024-02-29",
     title: "Leap day",
-    text: "闰日",
-    textEn: "Leap day",
+    text: "A leap-day memory",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
   const entry = parseExperienceFile(source, "life", "/virtual/life/leap.json");
@@ -119,16 +118,14 @@ test("event parsing infers moduleId and serialization never stores it", () => {
     moduleId: "life",
     date: "2024-02-29",
     title: "Leap day",
-    text: "闰日",
-    textEn: "Leap day",
+    text: "A leap-day memory",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
   assert.deepEqual(experienceFileData(entry), {
     id: "life-2024-02-29",
     date: "2024-02-29",
     title: "Leap day",
-    text: "闰日",
-    textEn: "Leap day",
+    text: "A leap-day memory",
     images: [{ src: "/leap.jpg", alt: "Leap day" }],
   });
 
@@ -144,6 +141,7 @@ test("malformed JSON and invalid event bodies fail with their source path", (t) 
     ["2024-01-01.json", "{", /Invalid JSON/],
     ["2024-01-01.json", "[]", /must be an object/],
     ["2024-01-01.json", { id: "school-2024-01-01", moduleId: "life", date: "2024-01-01", text: "No" }, /unsupported field "moduleId"/],
+    ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01", caption: "Unsupported field" }, /unsupported field "caption"/],
     ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01", text: "No", extra: true }, /unsupported field "extra"/],
     ["2024-01-01.json", { date: "2024-01-01", text: "No id" }, /id must be a nonempty string/],
     ["2024-02-30.json", { id: "school-2024-02-30", date: "2024-02-30", text: "No" }, /Invalid experience date/],
@@ -188,7 +186,7 @@ test("only safe direct JSON filenames are accepted", (t) => {
   for (const invalid of [
     "event", "event.JSON", ".hidden.json", "event.json", "2024-01-01-.json",
     "2024-01-01-00.json", "2024-01-01-1.json", "2024-01-01-100.json",
-    "2024-01-01-event.json", "2024-01-01-event.name.json", "2024-01-01-经历.json",
+    "2024-01-01-event.json", "2024-01-01-event.name.json", "2024-01-01-évent.json",
     "../2024-01-01.json", "nested/2024-01-01.json",
   ]) {
     assert.throws(() => validateExperienceFileName(invalid), /Invalid experience filename/);
