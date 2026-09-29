@@ -31,11 +31,11 @@ interface Props {
 
 function Note({ entry }: { entry: ExperienceEntry }) {
   return (
-    <article className="experience-note" data-entry-id={entry.id} lang="en">
+    <article className="experience-note" data-entry-id={entry.id} lang={entry.lang}>
       <Image className="experience-note__pin" src="/images/experiences/note-pin.webp" alt="" width={34} height={34} />
       <time className="experience-note__date" dateTime={entry.date}>{formatExperienceDate(entry.date)}</time>
-      {entry.title && <h2 className="experience-note__title">{entry.title}</h2>}
-      {entry.text && <p className="experience-note__text">{entry.text}</p>}
+      {entry.title && <h2 className="experience-note__title" dir="auto">{entry.title}</h2>}
+      {entry.text && <p className="experience-note__text" dir="auto">{entry.text}</p>}
       {!!entry.images?.length && (
         <div className="experience-note__images">
           {entry.images.map((photo, index) => (

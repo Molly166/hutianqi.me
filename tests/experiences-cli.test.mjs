@@ -86,7 +86,7 @@ test("add, list, update, and remove operate on one independent event file", asyn
   const unrelatedPath = f.path("life", "2022-01-01.json");
   const unrelatedSource = await readFile(unrelatedPath, "utf8");
   const input = await f.input("note.json", {
-    date: "2023-09-15", text: "Temporary test content",
+    date: "2023-09-15", text: "こんにちは", lang: "ja",
     images: [{ src: "/images/test.jpg", alt: "Test image" }],
   });
 
@@ -97,17 +97,19 @@ test("add, list, update, and remove operate on one independent event file", asyn
   assert.equal(added.totalEntries, 2);
   const saved = JSON.parse(await readFile(added.file, "utf8"));
   assert.equal(saved.id, added.entry.id);
-  assert.equal(saved.text, "Temporary test content");
+  assert.equal(saved.text, "こんにちは");
+  assert.equal(saved.lang, "ja");
   assert.equal(Object.hasOwn(saved, "moduleId"), false);
   assert.equal(successful(f.run("list", "--module", "school"))[0].id, added.entry.id);
 
   const patch = await f.input("patch.json", {
-    text: "Updated temporary content", date: "2024-02-29",
+    text: "Contenido temporal actualizado", lang: "es", date: "2024-02-29",
   });
   const updated = successful(f.run("update", "--module", "school", "--id", added.entry.id, "--input", patch));
   assert.equal(updated.previousId, added.entry.id);
   assert.equal(updated.entry.id, "school-2024-02-29");
-  assert.equal(updated.entry.text, "Updated temporary content");
+  assert.equal(updated.entry.text, "Contenido temporal actualizado");
+  assert.equal(updated.entry.lang, "es");
   assert.deepEqual(updated.entry.images, added.entry.images);
   assert.equal(updated.file, f.path("school", "2024-02-29.json"));
   assert.equal(await exists(added.file), false);

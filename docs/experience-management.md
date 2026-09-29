@@ -30,6 +30,7 @@ The file contains one event object. Do not wrap it in an array or add `moduleId`
 {
   "id": "school-2023-09-12",
   "date": "2023-09-12",
+  "lang": "en",
   "title": "First Day on Campus",
   "text": "Today marks the beginning of my university life.",
   "images": [
@@ -41,9 +42,9 @@ The file contains one event object. Do not wrap it in an array or add `moduleId`
 }
 ```
 
-`moduleId` is inferred from the parent directory. The `id` is derived from the module and filename: `school/2023-09-12.json` must use `school-2023-09-12`, while `school/2023-09-12-01.json` must use `school-2023-09-12-01`. Updating the title, text, or images does not change the ID. Changing the date changes both the filename and ID.
+`moduleId` is inferred from the parent directory. The `id` is derived from the module and filename: `school/2023-09-12.json` must use `school-2023-09-12`, while `school/2023-09-12-01.json` must use `school-2023-09-12-01`. Updating the title, text, language, or images does not change the ID. Changing the date changes both the filename and ID.
 
-The date must be a real calendar date in `YYYY-MM-DD` format. At least one of `title`, `text`, or `images` must contain valid content. An event may contain only text, only images, or both. All written content must be in English. Every image must include a site URL and meaningful `alt` text.
+The date must be a real calendar date in `YYYY-MM-DD` format. At least one of `title`, `text`, or `images` must contain valid content. An event may contain only text, only images, or both. The website interface remains English, while note titles, text, and image descriptions may use any language. When authored content is not in English, set the optional `lang` field to a BCP 47 tag such as `ja`, `es`, or `zh-CN`; this helps browsers and assistive technology pronounce it correctly. Omitting `lang` inherits the website's English language setting. Every image must include a site URL and meaningful `alt` text.
 
 After adding a file manually, run these commands from the project root:
 
@@ -68,7 +69,7 @@ npm run experience -- list
 npm run experience -- add --module school --input note.json --dry-run
 npm run experience -- add --module school --input note.json
 
-# Update; patch.json contains only the date/title/text/images fields to change
+# Update; patch.json contains only the date/title/text/lang/images fields to change
 npm run experience -- update --module school --id RECORD_ID --input patch.json --dry-run
 npm run experience -- update --module school --id RECORD_ID --input patch.json
 
@@ -77,9 +78,9 @@ npm run experience -- remove --module school --id RECORD_ID --dry-run
 npm run experience -- remove --module school --id RECORD_ID
 ```
 
-Add input accepts only `id`, `date`, `title`, `text`, and `images`. Omit `id` unless necessary; `date` is required. The command chooses the lowest available number for that date: the first event uses `YYYY-MM-DD.json` and `<module>-YYYY-MM-DD`; later events use `-01`, `-02`, and so on. If an ID is supplied, it must exactly match the ID that the command would generate. The returned `file` and `entry.id` are final. With the same directory state, dry-run and real execution return the same result.
+Add input accepts only `id`, `date`, `title`, `text`, `lang`, and `images`. Omit `id` unless necessary; `date` is required. The optional `lang` field describes the language of the authored note content; use a standard BCP 47 tag such as `ja`, `es`, or `zh-CN`. The command chooses the lowest available number for that date: the first event uses `YYYY-MM-DD.json` and `<module>-YYYY-MM-DD`; later events use `-01`, `-02`, and so on. If an ID is supplied, it must exactly match the ID that the command would generate. The returned `file` and `entry.id` are final. With the same directory state, dry-run and real execution return the same result.
 
-Update input accepts only `date`, `title`, `text`, and `images`; it cannot set `id` directly or move an event between modules. Omitted fields remain unchanged. Use an empty string to clear the title or text, and use `images: []` to clear image references; do not use `null`. At least one valid content field must remain. When a date changes, the command first tries to preserve the event's same-day suffix. If that slot is occupied, it chooses the lowest available suffix on the new date and updates the ID. The output lists `previousId`, `previousFile`, and the new `entry.id` and `file`.
+Update input accepts only `date`, `title`, `text`, `lang`, and `images`; it cannot set `id` directly or move an event between modules. Omitted fields remain unchanged. Use an empty string to clear the title or text, and use `images: []` to clear image references; do not use `null`. Set `lang` to the new content language; use `lang: "en"` when changing a note back to English. At least one valid content field must remain. When a date changes, the command first tries to preserve the event's same-day suffix. If that slot is occupied, it chooses the lowest available suffix on the new date and updates the ID. The output lists `previousId`, `previousFile`, and the new `entry.id` and `file`.
 
 `--dry-run` performs the complete read, lookup, merge, and validation flow without creating, replacing, renaming, or deleting files. Use `--root /absolute/path/experiences` to test another data directory. The old single-file `--store` option has been removed.
 
