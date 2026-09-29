@@ -118,7 +118,7 @@ export default function LifeMapScene() {
     renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.setAttribute(
       "aria-label",
-      "人生地图三维模型，可拖动旋转、缩放并选择建筑",
+      "Interactive 3D life map. Drag to rotate, scroll to zoom, and select a landmark",
     );
     renderer.domElement.style.touchAction = "none";
     mount.appendChild(renderer.domElement);
@@ -299,7 +299,7 @@ export default function LifeMapScene() {
       renderer.domElement.style.cursor = "default";
       beginJourney({
         href: landmark.href,
-        label: `正在进入${landmark.title}`,
+        label: `Entering ${landmark.title}`,
       });
     };
 
@@ -449,7 +449,7 @@ export default function LifeMapScene() {
   return (
     <main className="school-scene">
       <h1 className="sr-only" data-journey-heading tabIndex={-1}>
-        人生地图
+        Life Map
       </h1>
       <div className="school-scene__canvas" ref={mountRef} />
       {mapLandmarks.map((landmark) => (
@@ -459,7 +459,7 @@ export default function LifeMapScene() {
           onClick={() => activateLandmarkFromKeyboard(landmark.id)}
           key={landmark.id}
         >
-          进入{landmark.title}经历
+          Explore {landmark.title}
         </button>
       ))}
     </main>

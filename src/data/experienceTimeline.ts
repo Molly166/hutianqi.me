@@ -31,6 +31,21 @@ function monthIndex({ year, month }: { year: number; month: number }) {
   return year * 12 + month - 1;
 }
 
+const ENGLISH_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
 export function sortExperienceEntries(
   entries: readonly ExperienceEntry[],
   moduleId: ExperienceModuleId,
@@ -77,7 +92,7 @@ export function buildExperienceMonths(
       id,
       year,
       month,
-      label: `${year}年${month}月`,
+      label: `${ENGLISH_MONTHS[month - 1]} ${year}`,
       entries: entriesByMonth.get(id) ?? [],
     };
   });
@@ -105,7 +120,7 @@ export function buildExperienceDays(
       year,
       month,
       day,
-      label: `${year}年${month}月${day}日`,
+      label: `${ENGLISH_MONTHS[month - 1]} ${day}, ${year}`,
       entries: dayEntries,
     };
   });

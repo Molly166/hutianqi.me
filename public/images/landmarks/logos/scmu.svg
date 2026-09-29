@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">SCMU 1951</title>
+  <circle cx="256" cy="256" r="238" fill="#087a4d"/>
+  <circle cx="256" cy="256" r="211" fill="#f8f5e9"/>
+  <circle cx="256" cy="256" r="185" fill="#087a4d"/>
+  <circle cx="256" cy="256" r="132" fill="#f8f5e9"/>
+  <text x="256" y="246" fill="#087a4d" font-family="Georgia, serif" font-size="80" font-weight="700" text-anchor="middle">SCMU</text>
+  <text x="256" y="319" fill="#087a4d" font-family="Georgia, serif" font-size="48" letter-spacing="8" text-anchor="middle">1951</text>
+  <path id="top-arc" d="M 105 256 A 151 151 0 0 1 407 256" fill="none"/>
+  <text fill="#f8f5e9" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="5">
+    <textPath href="#top-arc" startOffset="50%" text-anchor="middle">SOUTH-CENTRAL MINZU</textPath>
+  </text>
+</svg>

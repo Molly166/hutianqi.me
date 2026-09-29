@@ -5,6 +5,7 @@
   --ink: #162320;
   --mist: #b8c9c6;
   --paper: #eef1e8;
+  --site-font: "Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", serif;
 }
 
 * {
@@ -26,13 +27,17 @@ html {
 body {
   color: var(--ink);
   background: var(--mist);
-  font-family: "Zhi Mang Xing", "STXingkai", "KaiTi", cursive;
+  font-family: var(--site-font);
 }
 
 button,
 input,
 textarea,
-select {
+select,
+code,
+kbd,
+pre,
+samp {
   font: inherit;
 }
 
@@ -253,7 +258,7 @@ select {
   opacity: 0;
   transform: translate(-50%, -50%);
   white-space: nowrap;
-  font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", sans-serif;
+  font-family: inherit;
   font-size: clamp(1.8rem, 5vw, 4.25rem);
   font-weight: 600;
   line-height: 1;
@@ -500,14 +505,6 @@ select {
   font-size: 1.5rem;
   line-height: 1.6;
   white-space: pre-wrap;
-}
-
-.experience-note__text--en {
-  margin-top: 0.8rem;
-  color: #655b49;
-  font-size: 1.05rem;
-  line-height: 1.48;
-  letter-spacing: 0.015em;
 }
 
 .experience-note__images {

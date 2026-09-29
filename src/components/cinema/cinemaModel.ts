@@ -118,7 +118,7 @@ function addCinemaWordmark(parent: THREE.Object3D) {
   context.lineWidth = 10;
   context.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
   context.fillStyle = "#f0dca8";
-  context.font = "700 78px 'Avenir Next', 'Helvetica Neue', sans-serif";
+  context.font = "400 78px 'Kaiti SC', 'STKaiti', 'KaiTi', 'KaiTi_GB2312', 'DFKai-SB', serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.letterSpacing = "12px";

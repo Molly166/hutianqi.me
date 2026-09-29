@@ -31,33 +31,32 @@ test("the shared module registry is valid and has six named modules", () => {
   const store = baseStore();
   assert.equal(store.version, 1);
   assert.deepEqual(store.modules, [
-    { id: "school", label: "学校" },
-    { id: "company", label: "公司" },
-    { id: "internship", label: "实习" },
-    { id: "work", label: "工作" },
-    { id: "life", label: "生活" },
-    { id: "watch", label: "观影" },
+    { id: "school", label: "Education" },
+    { id: "company", label: "Companies" },
+    { id: "internship", label: "Internships" },
+    { id: "work", label: "Work" },
+    { id: "life", label: "Life" },
+    { id: "watch", label: "Watch Journal" },
   ]);
 });
 
-test("title-only, Chinese-text-only, English-text-only, and image-only entries are valid", () => {
+test("title-only, text-only, and image-only entries are valid", () => {
   const store = baseStore();
   store.entries = [
     entry("title", "school", "2024-01-01", { title: "First day" }),
     entry("text", "company", "2024-02-01", { text: "A remembered moment" }),
-    entry("text-en", "watch", "2024-02-02", { textEn: "An English memory" }),
     entry("image", "life", "2024-03-01", { images: [{ src: "/images/photo.jpg", alt: "" }] }),
   ];
   assert.deepEqual(validateExperienceStore(store), store);
 });
 
 test("totally empty entries and malformed images are rejected", () => {
-  for (const content of [{}, { title: " ", text: "\n", textEn: "\t", images: [] }]) {
+  for (const content of [{}, { title: " ", text: "\n", images: [] }]) {
     assert.throws(() => addExperience(baseStore(), entry("empty", "school", "2024-01-01", content)), /must contain/);
   }
   assert.throws(
-    () => addExperience(baseStore(), entry("bad-english", "watch", "2024-01-01", { textEn: 42 })),
-    /textEn must be a string/,
+    () => addExperience(baseStore(), entry("unsupported", "watch", "2024-01-01", { caption: "Unsupported field" })),
+    /unsupported field "caption"/,
   );
   for (const images of [null, {}, [null], [{ src: " ", alt: "A photo" }], [{ src: "/photo.jpg" }]]) {
     assert.throws(() => addExperience(baseStore(), entry("bad-image", "life", "2024-01-01", { images })), /image/i);
@@ -66,7 +65,7 @@ test("totally empty entries and malformed images are rejected", () => {
 
 test("image sources allow portable root-relative paths and valid absolute HTTP URLs", () => {
   for (const src of [
-    "/images/school/memory.jpg", "/images/中文照片.png", "/images/my%20photo.jpg",
+    "/images/school/memory.jpg", "/images/unicode-photo.png", "/images/my%20photo.jpg",
     "https://images.example.com/photo.jpg?size=800&format=webp", "http://localhost:3000/photo.jpg",
     "HTTPS://images.example.com/photo.jpg",
   ]) {
@@ -108,7 +107,7 @@ test("the store schema, module IDs, and labels are validated", () => {
   assert.throws(() => validateExperienceStore({ version: 1, modules: [{ id: " ", label: "School" }], entries: [] }), /nonempty/);
   assert.throws(() => validateExperienceStore({ version: 1, modules: [{ id: "school", label: "" }], entries: [] }), /nonempty/);
   assert.throws(() => validateExperienceStore({ version: 1, modules: [
-    { id: "school", label: "学校" }, { id: "school", label: "校园" },
+    { id: "school", label: "Education" }, { id: "school", label: "Campus" },
   ], entries: [] }), /Duplicate experience module id/);
   assert.throws(() => addExperience(baseStore(), entry("unknown", "missing")), /Unknown experience module/);
   assert.throws(() => listExperiences(baseStore(), "missing"), /Unknown experience module/);
@@ -155,13 +154,11 @@ test("CRUD adds, reads, moves, updates, and removes a record without changing it
   const added = addExperience(empty, entry("memory", "internship", "2024-07-01"));
   const updated = updateExperience(added, "memory", {
     moduleId: "work", date: "2025-03-01", title: "Joined the team", text: "A new chapter",
-    textEn: "A new chapter in English",
     images: [{ src: "/images/team.jpg", alt: "The team" }],
   });
   assert.deepEqual(listExperiences(updated, "internship"), []);
   assert.deepEqual(listExperiences(updated, "work"), [{
     id: "memory", moduleId: "work", date: "2025-03-01", title: "Joined the team", text: "A new chapter",
-    textEn: "A new chapter in English",
     images: [{ src: "/images/team.jpg", alt: "The team" }],
   }]);
   const removed = removeExperience(updated, "memory");
@@ -173,17 +170,17 @@ test("CRUD adds, reads, moves, updates, and removes a record without changing it
 
 test("updates can clear optional content while preserving at least one content field", () => {
   const store = addExperience(baseStore(), entry("memory", "school", "2024-01-01", {
-    title: "Title", text: "Text", textEn: "English text", images: [{ src: "/photo.jpg", alt: "Photo" }],
+    title: "Title", text: "Text", images: [{ src: "/photo.jpg", alt: "Photo" }],
   }));
   const changed = updateExperience(store, "memory", {
-    title: undefined, text: "Remaining text", textEn: "Updated English text", images: [],
+    title: undefined, text: "Remaining text", images: [],
   });
   assert.deepEqual(changed.entries[0], {
     id: "memory", moduleId: "school", date: "2024-01-01", text: "Remaining text",
-    textEn: "Updated English text", images: [],
+    images: [],
   });
   assert.throws(
-    () => updateExperience(store, "memory", { title: undefined, text: "", textEn: "", images: [] }),
+    () => updateExperience(store, "memory", { title: undefined, text: "", images: [] }),
     /must contain/,
   );
 });
@@ -217,7 +214,7 @@ test("all helpers leave frozen inputs untouched and returned objects are indepen
   updated.entries[0].images[0].alt = "Changed updated alt";
   removed.modules[0].label = "Changed removed label";
 
-  assert.equal(source.modules[0].label, "学校");
+  assert.equal(source.modules[0].label, "Education");
   assert.equal(source.entries[0].text, "Original");
   assert.equal(source.entries[0].images[0].alt, "Original alt");
   assert.equal(patch.images[0].alt, "Updated alt");

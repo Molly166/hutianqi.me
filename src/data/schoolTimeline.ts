@@ -13,8 +13,8 @@ export type SchoolExperienceEntry = ExperienceEntry;
 export type SchoolMonth = ExperienceMonth;
 
 /**
- * 学校经历由调用方加载；这里只负责校验、筛选、归月和排序。
- * 默认显示 2023 年 9 月至 2026 年 9 月，超出范围的新经历会自动延伸时间线。
+ * The caller loads education entries; this module validates, filters, groups,
+ * and sorts them. The default range expands when real entries fall outside it.
  */
 /** Validate entries and return a new array, preserving input order for equal dates. */
 export function sortSchoolEntries(

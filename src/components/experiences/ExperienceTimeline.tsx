@@ -86,7 +86,7 @@ export default function ExperienceTimeline({ periods, unit, selectedIndex, onSel
   };
 
   return (
-    <section className="experience-timeline" aria-label={`${label}时间轴`}>
+    <section className="experience-timeline" aria-label={`${label} timeline`}>
       <div className="experience-timeline__viewport" ref={timelineViewport}>
         <div
           className="experience-timeline__ruler"
@@ -102,7 +102,7 @@ export default function ExperienceTimeline({ periods, unit, selectedIndex, onSel
                 className="experience-timeline__year"
                 data-active={year.year === selectedPeriod.year}
                 style={{ gridColumn: `${year.startIndex + 1} / span ${year.count}` }}
-                aria-label={`跳到${periods[year.startIndex].label}`}
+                aria-label={`Jump to ${periods[year.startIndex].label}`}
                 onClick={() => setSelectedIndex(year.startIndex)}
               >
                 {year.year}
@@ -110,7 +110,7 @@ export default function ExperienceTimeline({ periods, unit, selectedIndex, onSel
             ))}
           </div>
 
-          <div className="experience-timeline__months" role="radiogroup" aria-label={`选择${label}${unit === "day" ? "日期" : "月份"}`}>
+          <div className="experience-timeline__months" role="radiogroup" aria-label={`Choose a ${label} ${unit === "day" ? "date" : "month"}`}>
             {periods.map((period, index) => (
               <button
                 key={period.id}

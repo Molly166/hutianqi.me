@@ -13,10 +13,10 @@ test("an empty source retains every month from September 2023 to September 2026"
   const months = buildSchoolMonths([]);
   assert.equal(months.length, 37);
   assert.deepEqual(months[0], {
-    id: "2023-09", year: 2023, month: 9, label: "2023年9月", entries: [],
+    id: "2023-09", year: 2023, month: 9, label: "September 2023", entries: [],
   });
   assert.deepEqual(months.at(-1), {
-    id: "2026-09", year: 2026, month: 9, label: "2026年9月", entries: [],
+    id: "2026-09", year: 2026, month: 9, label: "September 2026", entries: [],
   });
   assert.ok(months.every((month) => month.entries.length === 0));
   assert.equal(new Set(months.map((month) => month.id)).size, 37);

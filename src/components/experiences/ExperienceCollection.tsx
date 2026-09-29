@@ -31,12 +31,11 @@ interface Props {
 
 function Note({ entry }: { entry: ExperienceEntry }) {
   return (
-    <article className="experience-note" data-entry-id={entry.id}>
+    <article className="experience-note" data-entry-id={entry.id} lang="en">
       <Image className="experience-note__pin" src="/images/experiences/note-pin.webp" alt="" width={34} height={34} />
       <time className="experience-note__date" dateTime={entry.date}>{formatExperienceDate(entry.date)}</time>
       {entry.title && <h2 className="experience-note__title">{entry.title}</h2>}
       {entry.text && <p className="experience-note__text">{entry.text}</p>}
-      {entry.textEn && <p className="experience-note__text experience-note__text--en" lang="en">{entry.textEn}</p>}
       {!!entry.images?.length && (
         <div className="experience-note__images">
           {entry.images.map((photo, index) => (
@@ -285,7 +284,7 @@ export default function ExperienceCollection({ periods, label, periodUnit = "mon
       <div
         className="experience-stage"
         role="region"
-        aria-label={`${label}便签板`}
+        aria-label={`${label} note board`}
         onPointerDown={(event) => {
           if (!event.isPrimary || event.button !== 0) return;
           pointerStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
@@ -311,7 +310,9 @@ export default function ExperienceCollection({ periods, label, periodUnit = "mon
           );
         })}
       </div>
-      <span className="sr-only" role="status">{current.label}，{current.entries.length}张便签</span>
+      <span className="sr-only" role="status">
+        {current.label}, {current.entries.length} {current.entries.length === 1 ? "note" : "notes"}
+      </span>
       <ExperienceTimeline periods={periods} unit={periodUnit} label={label} selectedIndex={selectedIndex} onSelect={select} />
     </div>
   );

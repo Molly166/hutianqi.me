@@ -4,16 +4,16 @@ import SchoolExperience from "@/components/school/SchoolExperience";
 
 export const metadata: Metadata = {
   title: "hutianqi.me",
-  description: "胡天齐在中南民族大学的经历。",
+  description: "Hu Tianqi's experiences at South-Central Minzu University.",
 };
 
 export default function SchoolPage() {
   return (
     <main className="school-detail">
       <h1 className="sr-only" data-journey-heading tabIndex={-1}>
-        中南民族大学
+        South-Central Minzu University
       </h1>
-      <FootstepBackLink transitionLabel="正在离开学校，返回人生地图" />
+      <FootstepBackLink transitionLabel="Leaving the university and returning to the life map" />
       <SchoolExperience />
     </main>
   );
