@@ -108,25 +108,28 @@ test("event parsing infers moduleId and serialization never stores it", () => {
   const source = JSON.stringify({
     id: "life-2024-02-29",
     date: "2024-02-29",
-    title: "Leap day",
-    text: "A leap-day memory",
-    images: [{ src: "/leap.jpg", alt: "Leap day" }],
+    lang: "es",
+    title: "Día bisiesto",
+    text: "Un recuerdo de un día bisiesto",
+    images: [{ src: "/leap.jpg", alt: "Un recuerdo del día bisiesto" }],
   });
   const entry = parseExperienceFile(source, "life", "/virtual/life/leap.json");
   assert.deepEqual(entry, {
     id: "life-2024-02-29",
     moduleId: "life",
     date: "2024-02-29",
-    title: "Leap day",
-    text: "A leap-day memory",
-    images: [{ src: "/leap.jpg", alt: "Leap day" }],
+    lang: "es",
+    title: "Día bisiesto",
+    text: "Un recuerdo de un día bisiesto",
+    images: [{ src: "/leap.jpg", alt: "Un recuerdo del día bisiesto" }],
   });
   assert.deepEqual(experienceFileData(entry), {
     id: "life-2024-02-29",
     date: "2024-02-29",
-    title: "Leap day",
-    text: "A leap-day memory",
-    images: [{ src: "/leap.jpg", alt: "Leap day" }],
+    lang: "es",
+    title: "Día bisiesto",
+    text: "Un recuerdo de un día bisiesto",
+    images: [{ src: "/leap.jpg", alt: "Un recuerdo del día bisiesto" }],
   });
 
   const serialized = serializeExperienceFile(entry);
@@ -143,6 +146,7 @@ test("malformed JSON and invalid event bodies fail with their source path", (t) 
     ["2024-01-01.json", { id: "school-2024-01-01", moduleId: "life", date: "2024-01-01", text: "No" }, /unsupported field "moduleId"/],
     ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01", caption: "Unsupported field" }, /unsupported field "caption"/],
     ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01", text: "No", extra: true }, /unsupported field "extra"/],
+    ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01", text: "No", lang: " " }, /lang must be a nonempty string/],
     ["2024-01-01.json", { date: "2024-01-01", text: "No id" }, /id must be a nonempty string/],
     ["2024-02-30.json", { id: "school-2024-02-30", date: "2024-02-30", text: "No" }, /Invalid experience date/],
     ["2024-01-01.json", { id: "school-2024-01-01", date: "2024-01-01" }, /must contain/],

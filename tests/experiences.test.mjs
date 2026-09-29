@@ -40,14 +40,33 @@ test("the shared module registry is valid and has six named modules", () => {
   ]);
 });
 
-test("title-only, text-only, and image-only entries are valid", () => {
+test("title-only, multilingual text-only, and image-only entries are valid", () => {
   const store = baseStore();
   store.entries = [
     entry("title", "school", "2024-01-01", { title: "First day" }),
-    entry("text", "company", "2024-02-01", { text: "A remembered moment" }),
+    entry("text", "company", "2024-02-01", { text: "こんにちは", lang: "ja" }),
     entry("image", "life", "2024-03-01", { images: [{ src: "/images/photo.jpg", alt: "" }] }),
   ];
   assert.deepEqual(validateExperienceStore(store), store);
+});
+
+test("note language metadata is optional, unrestricted by content language, and validated as a string", () => {
+  const store = addExperience(baseStore(), entry("spanish", "life", "2024-01-01", {
+    text: "Qué día tan bonito.", lang: "es",
+  }));
+  assert.equal(store.entries[0].text, "Qué día tan bonito.");
+  assert.equal(store.entries[0].lang, "es");
+
+  const updated = updateExperience(store, "spanish", { text: "今日はいい日です。", lang: "ja" });
+  assert.equal(updated.entries[0].text, "今日はいい日です。");
+  assert.equal(updated.entries[0].lang, "ja");
+
+  for (const lang of [null, 42, "", " "]) {
+    assert.throws(
+      () => addExperience(baseStore(), entry("bad-lang", "life", "2024-01-01", { text: "Text", lang })),
+      /lang must be a nonempty string/,
+    );
+  }
 });
 
 test("totally empty entries and malformed images are rejected", () => {
@@ -154,11 +173,13 @@ test("CRUD adds, reads, moves, updates, and removes a record without changing it
   const added = addExperience(empty, entry("memory", "internship", "2024-07-01"));
   const updated = updateExperience(added, "memory", {
     moduleId: "work", date: "2025-03-01", title: "Joined the team", text: "A new chapter",
+    lang: "en",
     images: [{ src: "/images/team.jpg", alt: "The team" }],
   });
   assert.deepEqual(listExperiences(updated, "internship"), []);
   assert.deepEqual(listExperiences(updated, "work"), [{
     id: "memory", moduleId: "work", date: "2025-03-01", title: "Joined the team", text: "A new chapter",
+    lang: "en",
     images: [{ src: "/images/team.jpg", alt: "The team" }],
   }]);
   const removed = removeExperience(updated, "memory");

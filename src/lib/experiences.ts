@@ -5,6 +5,8 @@ export interface ExperienceEntry {
   date: string;
   title?: string;
   text?: string;
+  /** Optional BCP 47 language tag for this note's authored content. */
+  lang?: string;
   images?: Array<{ src: string; alt: string }>;
 }
 
@@ -115,7 +117,7 @@ export function validateExperienceStore(store: unknown): ExperienceStore {
   const entries = source.entries.map((value, index): ExperienceEntry => {
     const context = `Experience entry at index ${index}`;
     const entry = requireObject(value, context);
-    requireKnownFields(entry, ["id", "moduleId", "date", "title", "text", "images"], context);
+    requireKnownFields(entry, ["id", "moduleId", "date", "title", "text", "lang", "images"], context);
     const id = requireString(entry.id, `${context} id`, true);
     if (entryIds.has(id)) {
       throw new Error(`Duplicate experience entry id ${JSON.stringify(id)}.`);
@@ -133,6 +135,9 @@ export function validateExperienceStore(store: unknown): ExperienceStore {
     }
     if (entry.text !== undefined) {
       result.text = requireString(entry.text, `Experience entry ${JSON.stringify(id)} text`);
+    }
+    if (entry.lang !== undefined) {
+      result.lang = requireString(entry.lang, `Experience entry ${JSON.stringify(id)} lang`, true);
     }
     if (entry.images !== undefined) {
       if (!Array.isArray(entry.images)) {
@@ -190,7 +195,7 @@ export function updateExperience(
   if ("id" in updates) {
     throw new Error("An experience update cannot change its id.");
   }
-  requireKnownFields(updates, ["moduleId", "date", "title", "text", "images"], "Experience update");
+  requireKnownFields(updates, ["moduleId", "date", "title", "text", "lang", "images"], "Experience update");
   const index = validated.entries.findIndex((entry) => entry.id === id);
   if (index < 0) {
     throw new Error(`Experience entry ${JSON.stringify(id)} was not found.`);
